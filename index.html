@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+  // Device gate (PRODUCT_REQUIREMENTS.md §19 / DEVELOPMENT_PLAN.md
+  // Stage 14): this desktop scene and mobile/index.html's static tap-zone
+  // scene are two independent entry points with no shared layout — a
+  // narrow/portrait viewport must never load this page's parallax scene
+  // at all, not just render it awkwardly. Runs synchronously, as the
+  // very first thing after <meta viewport> (so the media query already
+  // sees the real device width, not a pre-viewport-meta default) and
+  // before any stylesheet/asset below is requested, so a phone-sized
+  // viewport never fetches this page's desktop assets before leaving.
+  // 767px matches this project's own established mobile breakpoint (see
+  // Stage 14's history). .replace(), not .href, so the redirect doesn't
+  // leave a back-button entry that would just bounce the user right
+  // back here into another redirect.
+  //
+  // Live re-check (2026-08-25, later still): the one-time check above
+  // only ever runs once, at load — it never catches a viewport that
+  // narrows to mobile width AFTER this page has already loaded (a manual
+  // browser-window resize, an orientation change, or a backgrounded tab
+  // resuming at a different size), so a desktop-loaded page left open
+  // through one of those never left. `MediaQueryList`'s own 'change'
+  // event exists exactly for this — it fires only when `matches` itself
+  // flips, not on every resize tick, so it's used here instead of a
+  // manual `resize` listener; the SAME MediaQueryList object is reused
+  // for both the one-time check and this listener, rather than
+  // constructing a second one for the same query.
+
+  // Narrow-aspect gate (2026-10-13): the desktop Campus is now a pure
+  // "cover" with no blurred backdrop, so any window narrower than 3:2
+  // (portrait, square, 4:3, 5:4) would crop buildings off its sides —
+  // those go to mobile/ too. "not all and (min-aspect-ratio: 3/2)" is a
+  // strict "< 3/2", so an exact 3:2 window stays here, and
+  // mobile/index.html's reverse gate is its exact negation (no ping-pong
+  // at the boundary).
+  var mobileQuery = window.matchMedia('(max-width: 767px), not all and (min-aspect-ratio: 3/2)');
+
+  function goMobile() {
+    window.location.replace('mobile/index.html');
+  }
+
+  if (mobileQuery.matches) {
+    goMobile();
+  } else {
+    var pendingMobileRedirect = null;
+    mobileQuery.addEventListener('change', function (event) {
+      if (pendingMobileRedirect) {
+        clearTimeout(pendingMobileRedirect);
+        pendingMobileRedirect = null;
+      }
+      if (!event.matches) return; // only react to crossing INTO mobile width
+      // Debounced (300ms): guards against a transient/flickering match —
+      // DevTools device-emulation toggling, or the brief instant of
+      // unstable `innerWidth` some mobile browsers report mid
+      // orientation-change — by requiring the narrow state to still hold
+      // once the delay elapses, rather than acting on the very first
+      // 'change' event.
+      pendingMobileRedirect = setTimeout(function () {
+        if (mobileQuery.matches) {
+          goMobile();
+        }
+      }, 300);
+    });
+  }
+</script>
+<title>Glonari Global Scene</title>
+<link rel="stylesheet" href="design-tokens.css">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="section-modal.css">
+<link rel="stylesheet" href="plaza.css">
+</head>
+<body>
+  <!-- Glonari Plaza 210° (2026-10-24, DEVELOPMENT_PLAN.md Stage 21 /
+       PRODUCT_REQUIREMENTS.md §31): the atrium technology — plaza.js draws the
+       panorama, the engraved names, Gia on the fountain and the 11 zones. -->
+  <main id="stage" aria-label="Glonari plaza. Drag to look around; choose a building to enter.">
+    <svg id="overlay" aria-hidden="true"></svg>
+  </main>
+  <p id="caption" aria-live="polite"></p>
+  <nav id="rooms-nav" aria-label="Buildings"></nav>
+  <button class="step" id="prev" type="button" aria-label="Previous building"><svg viewBox="0 0 18 18" aria-hidden="true"><path d="M11.5 3 5.5 9l6 6" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+  <button class="step" id="next" type="button" aria-label="Next building"><svg viewBox="0 0 18 18" aria-hidden="true"><path d="m6.5 3 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+  <p id="status" role="status"></p>
+  <section id="room" hidden aria-labelledby="room-title">
+    <div class="room-card">
+      <h2 id="room-title"></h2>
+      <p id="room-text"></p>
+      <button id="back" type="button">Back to the plaza</button>
+    </div>
+  </section>
+  <div id="veil"></div>
+
+  <!-- Section modal (section-modal.js / section-modal.css): unchanged. -->
+  <div id="modal-overlay">
+    <div id="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-desc">
+      <h2 id="modal-title"></h2>
+      <p id="modal-desc"></p>
+      <button id="modal-close" type="button">Close</button>
+    </div>
+  </div>
+
+  <!-- Custom cursor (2026-10-25, Stage 21 / §31): copy of glonari.com's;
+       the dot must come before the ring (.is-hot ~ .gg-ring). -->
+  <div class="gg-dot" aria-hidden="true"></div>
+  <div class="gg-ring" aria-hidden="true"></div>
+
+  <script src="digital-banker/atrium/vendor/three.min.js"></script>
+  <script src="plaza.js" data-base=""></script>
+  <script src="section-modal.js" defer></script>
+  <script src="main.js" defer></script>
+</body>
+</html>

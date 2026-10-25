@@ -1,0 +1,105 @@
+/* Glonari Plaza 210° — styles of the first screen (2026-10-24), shared by
+   index.html and mobile/index.html. Taken from the Digital Banker atrium
+   (digital-banker/atrium/index.html) without its masthead, back link and
+   room video. Font files are the atrium's own (paths relative to this file). */
+@font-face { font-family: Cinzel; font-weight: 600; font-display: swap; src: url('digital-banker/atrium/assets/fonts/cinzel-latin-600-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Cormorant Garamond'; font-weight: 400; font-display: swap; src: url('digital-banker/atrium/assets/fonts/cormorant-garamond-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Cormorant Garamond'; font-weight: 500; font-display: swap; src: url('digital-banker/atrium/assets/fonts/cormorant-garamond-latin-500-normal.woff2') format('woff2'); }
+
+:root {
+  --walnut: #2b1a0c;
+  --stone: #efdfbf;
+  --gilt: #d8b067;
+  --gilt-deep: #9a6d2c;
+  --ivory: #fff8ea;
+  --card-bg: rgba(250, 240, 220, 0.92);
+  --card-ink: #3a2410;
+  --card-muted: #6d5033;
+  --serif: 'Cormorant Garamond', Garamond, 'Times New Roman', serif;
+  --inscription: Cinzel, 'Trajan Pro', Georgia, serif;
+  color-scheme: light dark;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --card-bg: rgba(38, 24, 11, 0.9); --card-ink: #f6e6c6; --card-muted: #cdb38a; }
+}
+:root[data-theme="dark"] { --card-bg: rgba(38, 24, 11, 0.9); --card-ink: #f6e6c6; --card-muted: #cdb38a; }
+*, *::before, *::after { box-sizing: inherit; }
+html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); }
+body { height: 100%; margin: 0; overflow: hidden; background: var(--walnut); color: var(--ivory); font-family: var(--serif); }
+
+#stage { position: fixed; inset: 0; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+#stage.dragging { cursor: grabbing; }
+#stage.pointing:not(.dragging) { cursor: pointer; }
+/* Custom cursor (2026-10-25, Stage 21 / §31) — a copy of glonari.com's
+   .gg-dot/.gg-ring: the dot sits on the mouse, the ring trails it; over a
+   zone the dot opens into a 52px circle around the native hand and the ring
+   fades. Mouse/trackpad only; the two divs exist only in index.html, plaza.js
+   moves them. The native cursor is hidden over the panorama (drag too) and
+   is the hand over a zone. */
+.gg-dot,.gg-ring{z-index:90;pointer-events:none;border-radius:50%;display:none;position:fixed;top:0;left:0;transform:translate(-50%,-50%)}
+.gg-dot{background:#ecc9a3;width:8px;height:8px;transition:width .25s,height .25s,background .25s;box-shadow:0 0 0 1.5px #16233fb3,0 0 10px 2px #ecc9a3b3}
+.gg-dot.is-hot{background:#ecc9a324;border:1px solid #ecc9a3e6;width:52px;height:52px}
+.gg-ring{border:1.5px solid #16233f80;width:30px;height:30px;transition:opacity .3s}
+.gg-dot.is-hot~.gg-ring{opacity:0}
+.gg-dot.is-away,.gg-ring.is-away{opacity:0}
+@media (hover:hover) and (pointer:fine){
+  .gg-dot,.gg-ring{display:block}
+  #stage, #stage.dragging { cursor: none; }
+  #stage.pointing:not(.dragging) { cursor: pointer; }
+}
+@media (prefers-reduced-motion: reduce) { .gg-dot { transition: none; } }
+#stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 1.2s ease, filter .5s ease; }
+body.ready #stage canvas { opacity: 1; }
+body.in-room #stage canvas { filter: blur(14px) brightness(.5); }
+
+#overlay { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+#overlay .door { fill: transparent; pointer-events: all; }
+#overlay .dim { fill: rgba(28, 16, 5, .5); pointer-events: none; opacity: 0; transition: opacity .45s ease; }
+#overlay .glow { fill: rgba(255, 214, 150, .10); stroke: #f1cf8c; stroke-width: 2; pointer-events: none; opacity: 0; transition: opacity .35s ease;
+  filter: drop-shadow(0 0 6px rgba(255, 206, 120, .9)) drop-shadow(0 0 22px rgba(255, 190, 90, .55)); mix-blend-mode: screen; }
+#overlay.has-active .dim, #overlay.has-active .glow { opacity: 1; }
+body.entering #overlay .dim, body.entering #overlay .glow { opacity: 0; }
+body.in-room #overlay { opacity: 0; }
+
+#caption { position: fixed; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(14px, 3.5vh, 30px)); margin: 0; text-align: center; pointer-events: none;
+  font-size: clamp(16px, 1.5vw, 20px); color: var(--ivory); text-shadow: 0 1px 3px rgba(30, 15, 3, .9), 0 0 18px rgba(30, 15, 3, .7);
+  opacity: 0; transition: opacity 1s ease 1s; }
+body.ready #caption { opacity: 1; }
+body.in-room #caption, body.entering #caption { opacity: 0; transition-delay: 0s; }
+
+.step { position: fixed; top: 50%; z-index: 3; width: 46px; height: 46px; margin-top: -23px; display: none; place-items: center; padding: 0;
+  border-radius: 50%; border: 1px solid rgba(255, 231, 186, .75); background: rgba(43, 26, 12, .45); color: var(--ivory); cursor: pointer;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); opacity: 0; transition: opacity 1s ease 1.2s; }
+.step svg { width: 18px; height: 18px; }
+#prev { left: calc(env(safe-area-inset-left, 0px) + 12px); }
+#next { right: calc(env(safe-area-inset-right, 0px) + 12px); }
+.step:focus-visible { outline: 2px solid var(--gilt); outline-offset: 3px; }
+@media (max-width: 760px), (pointer: coarse) { .step { display: grid; } }
+body.ready .step { opacity: 1; }
+body.in-room .step, body.entering .step { opacity: 0; pointer-events: none; transition-delay: 0s; }
+#rooms-nav button { position: fixed; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; padding: 0; }
+
+#veil { position: fixed; inset: 0; background: #1c1005; opacity: 0; pointer-events: none; transition: opacity .38s ease; z-index: 5; }
+#veil.on { opacity: 1; }
+
+#room { position: fixed; inset: 0; z-index: 4; display: grid; place-items: center; padding: 24px; opacity: 0; transition: opacity .5s ease; }
+#room.shown { opacity: 1; }
+#room[hidden] { display: none; }
+.room-card { position: relative; max-width: 34rem; width: 100%; padding: clamp(24px, 4vw, 44px); background: var(--card-bg); color: var(--card-ink);
+  border: 1px solid rgba(216, 176, 103, .7); outline: 1px solid rgba(216, 176, 103, .35); outline-offset: 5px; border-radius: 2px;
+  box-shadow: 0 30px 80px rgba(20, 10, 2, .45); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.room-card h2 { margin: 0 0 .5em; font-family: var(--inscription); font-weight: 600; font-size: clamp(24px, 3vw, 36px); letter-spacing: .12em; line-height: 1.15; }
+.room-card p { margin: 0 0 1.6em; font-size: clamp(18px, 1.6vw, 21px); line-height: 1.5; color: var(--card-muted); }
+#back { font: 500 18px/1 var(--serif); color: var(--card-ink); background: transparent; border: 1px solid var(--gilt-deep); padding: 12px 22px; border-radius: 2px; cursor: pointer;
+  transition: background .2s ease, color .2s ease; }
+#back:hover { background: var(--gilt-deep); color: var(--ivory); }
+#back:focus-visible, #rooms-nav button:focus-visible { outline: 2px solid var(--gilt); outline-offset: 3px; }
+
+#status { pointer-events: none; position: fixed; inset: auto 0 45% 0; margin: 0 auto; max-width: 30rem; padding: 0 24px; text-align: center; font-size: 20px; line-height: 1.5; color: var(--stone); transition: opacity .6s ease; }
+#status:empty::before { content: 'Opening the plaza…'; font-style: italic; opacity: .7; }
+body.ready #status:empty { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01s !important; transition-delay: 0s !important; } }

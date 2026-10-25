@@ -8,7 +8,7 @@ This document describes the project as it is now. Section numbers are kept as th
 
 ## 1. Product overview
 
-Glonari Global Scene is the Glonari first screen: the Glonari Plaza, a 210° panorama of nine buildings in an arc with Gia on the fountain in front of them, built on the Digital Banker atrium technology. The visitor looks around, hovers or taps a building, and enters it. Digital Banker and Gia lead into the connected sub-sites (Digital Banker → GIA → Atrium → Global Reserve / Global Dream; Meet Gia); the other buildings and the fountain open a placeholder room screen.
+Glonari Global Scene is the Glonari first screen: the Glonari Plaza, a 210° panorama of nine buildings in an arc with Gia on the fountain in front of them, built on the Digital Banker atrium technology. The visitor looks around, hovers or taps a building, and enters it. Digital Banker and Gia lead into the connected sub-sites (Digital Banker → GIA → Atrium → Global Reserve / Global Dream; Meet Gia); the other buildings and the globe on the fountain open a placeholder room screen.
 
 ## 2. Product goals
 
@@ -30,7 +30,7 @@ The page opens on the plaza with a short opening turn. The visitor drags (or use
 ## 7. Functional requirements
 
 - FR-1: Show the plaza on desktop and on phones (§31).
-- FR-2: 11 interactive zones — 9 buildings, Gia, the fountain — with hover/focus highlight and keyboard access.
+- FR-2: 11 interactive zones — 9 buildings, Gia, the globe on the fountain (`PLAZA.fountain` in code) — with hover/focus highlight and keyboard access.
 - FR-3: Digital Banker and Gia navigate to their sub-sites; the other zones open a placeholder room screen with "Back to the plaza".
 - FR-4: Reduced-motion support (§21).
 - FR-5: Phones and narrow windows are routed to `mobile/` and back (§19).
@@ -71,7 +71,7 @@ Every animation respects `prefers-reduced-motion: reduce`. On the plaza: poster 
 
 ## 23. Confirmed requirements
 
-- First screen (desktop and mobile) is the Glonari Plaza 210° (§31): atrium technology, 9 buildings + Gia + fountain as zones, placeholder room screen for the buildings without a target, building bar with the "Drag / Swipe to see more" hint.
+- First screen (desktop and mobile) is the Glonari Plaza 210° (§31): atrium technology, 9 buildings + Gia + the globe as zones, placeholder room screen for the buildings without a target, building bar with the "Drag / Swipe to see more" hint.
 - Chain: Plaza → GIA → Atrium → Global Reserve or Global Dream; Gia → Meet Gia; explicit back links (§14).
 - All user-facing copy in English (§15).
 - Vanilla JavaScript, no build step (§22).
@@ -88,15 +88,15 @@ Source: DEVELOPMENT_PLAN.md Stage 21.
 - **Technology:** the Digital Banker atrium (210° cylindrical panorama, three.js r128), per "Технологическая инструкция Атриум 210". One script `plaza.js` for desktop (`index.html`) and phones (`mobile/index.html`).
 - **Picture:** 6516×2172, 9 buildings left to right: Glonari Journey, Glonari Pulse, Glonari News, Global Connections, Digital Banker (centre), Global Dream, Glonari Commercial, Glonari Homes, Signature Personas. horizonY 1000, span 210° (both confirmed by the user).
 - **Names:** engraved by code into the blank facade bands (Cinzel, atrium engraving).
-- **Zones:** 9 buildings + Gia + the fountain; hover = 50% dim + gold outline along the zone's own outline; click ≤ 6 px.
-- **Click targets:** Digital Banker → `digital-banker/gia/index.html`; Gia → `meet-gia/index.html`; all other buildings and the fountain → placeholder room screen with "Back to the plaza". No new links.
+- **Zones:** 9 buildings + Gia + the globe on the fountain (in code `PLAZA.fountain`, id `fountain`, label "Glonari"); the fountain bowl is not clickable. Building outlines are simple architectural shapes with rounded corners (radius 25 panorama px; 12 at the Digital Banker pediment apex); rooftop plants are outside, trees inside. Gia's outline follows her silhouette in the video's mask, the globe's is a circle; the two do not overlap. Hover = everything else dimmed 50% + the zone's outline highlighted: gold line #f1cf8c 2 px, fill rgba(255,214,150,.10), glow (drop-shadow 6 px and 22 px), `mix-blend-mode: screen`. Click ≤ 6 px.
+- **Click targets:** Digital Banker → `digital-banker/gia/index.html`; Gia → `meet-gia/index.html`; all other buildings and the globe → placeholder room screen with "Back to the plaza". No new links.
 - **Gia on the fountain:** `assets/gia-fountain.mp4` (double colour/alpha video) at the floor circle below the steps, placed by the user's template (centre x 3186, bottom 1825, height 672); loops all the time the visitor is on the page.
 - **Phones:** same plaza, swipe, ‹ › buttons, building bar, half-size picture.
 - **Open:** manual check in real browsers and on real phones.
 
 ### Building bar
 
-- At the bottom centre of both pages, above the safe area: 9 identical thin gold icons of a classical building (pediment + columns), one per building left to right; Gia and the fountain are not in the bar. Under them, a thin gold line with a dot under each icon.
+- At the bottom centre of both pages, above the safe area: 9 identical thin gold icons of a classical building (pediment + columns), one per building left to right; Gia and the globe are not in the bar. Under them, a thin gold line with a dot under each icon.
 - The active icon is the building nearest the screen centre: larger and brighter, its dot larger with a glow. It changes live while dragging, during inertia, on zoom and with ‹ ›. After a building is picked with its icon or with ‹ ›, its icon stays active until the visitor moves the camera themselves (drag, pinch, wheel, keys) — at the picture's edges the camera cannot bring Journey or Signature Personas to the centre.
 - Clicking an icon turns the camera to that building and highlights it (dim + gold outline), like ‹ ›; it does not enter — entering is a click on the building itself.
 - Under the line, the hint in spaced Cinzel capitals with thin gold lines on both sides: "DRAG TO SEE MORE", on touch devices "SWIPE TO SEE MORE" (`PLAZA.hint` / `PLAZA.hintTouch`). While a zone is hovered or focused the hint shows the zone's label ("Enter …", "Meet Gia", "Glonari").
@@ -107,6 +107,6 @@ Source: DEVELOPMENT_PLAN.md Stage 21.
 ### Custom cursor
 
 - With a mouse/trackpad (on `index.html`, and on `mobile/index.html` when a narrow desktop window is sent there) the plaza uses an exact copy of the glonari.com cursor: a small gold dot on the mouse and a 30 px navy ring that trails it.
-- Over the panorama the system cursor is hidden ("circle in a circle"); over a building, Gia or the fountain the dot opens into a 52 px gold circle around the system hand and the ring fades ("hand in a circle").
+- Over the panorama the system cursor is hidden ("circle in a circle"); over a building, Gia or the globe the dot opens into a 52 px gold circle around the system hand and the ring fades ("hand in a circle").
 - Leaving the page hides both; reduced motion — the ring follows without lag, no size animation.
 - Phones and other touch devices: no cursor.

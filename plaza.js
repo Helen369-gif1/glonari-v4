@@ -12,8 +12,9 @@
    Coordinates are pixels of the panorama 6516 × 2172.
    ====================================================================== */
 const PLAZA = {
-  hint: 'Drag to look around. Choose a building to enter.',
-  hintTouch: 'Swipe to look around. Tap a building to enter.',
+  // the hint under the building bar (shown in capitals by plaza.css)
+  hint: 'Drag to see more',
+  hintTouch: 'Swipe to see more',
 
   image: {
     full:  'assets/plaza-6516.webp',   // computers
@@ -105,13 +106,12 @@ const PLAZA = {
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const $ = (id) => document.getElementById(id);
-  const stage = $('stage'), svg = $('overlay'), caption = $('caption');
+  const stage = $('stage'), svg = $('overlay'), bar = $('bar');
   const roomView = $('room'), roomTitle = $('room-title'), roomText = $('room-text');
   const backBtn = $('back'), veil = $('veil'), nav = $('rooms-nav');
 
   const coarse = matchMedia('(pointer: coarse)').matches;
   const HINT = coarse ? PLAZA.hintTouch : PLAZA.hint;
-  caption.textContent = HINT;
 
   /* ---------- WebGL ---------- */
   let renderer;
@@ -420,6 +420,37 @@ const PLAZA = {
   const byId = Object.fromEntries(zones.map((z) => [z.id, z]));
   const hostZones = zones.filter((z) => z.kind === 'host');
 
+  /* ---------- building bar: one icon per building, a line with dots, the hint ----------
+     The active icon is the building nearest the centre of the screen; a
+     click turns the camera to it and highlights it (like ‹ ›), never enters.
+     The hint shows the hovered/focused zone's label (instruction §9) and is
+     read out by screen readers; the icon row is hidden from them. */
+  const BAR_ICON = '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 11.5 16 4l12 7.5ZM5 13.5h22M7.5 15.5v9M12.5 15.5v9M19.5 15.5v9M24.5 15.5v9M5 26.5h22M3.5 28.5h25"/></svg>';
+  const barRow = document.createElement('div');
+  barRow.className = 'bar-row'; barRow.setAttribute('aria-hidden', 'true');
+  const barItems = zones.filter((z) => z.kind === 'building').map((z) => {
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.tabIndex = -1; btn.innerHTML = `${BAR_ICON}<i></i>`;
+    btn.addEventListener('click', () => { if (inRoom || busyFlag) return; setActive(z.id); pinBar(z); lookAt(z); });
+    barRow.appendChild(btn);
+    return { z, btn };
+  });
+  const barHint = document.createElement('p');
+  barHint.className = 'bar-hint'; barHint.setAttribute('aria-live', 'polite'); barHint.textContent = HINT;
+  bar.append(barRow, barHint);
+  // After an icon or ‹ › picks a building, its icon stays active until the
+  // visitor moves the camera (drag, pinch, wheel, keys, Tab, entering): at the
+  // picture's edges the camera stops short of centring Journey / Personas.
+  let barOn = null, barPin = null;
+  const pinBar = (z) => { barPin = barItems.find((it) => it.z === z) || null; dirty = true; };
+  function updateBar() {
+    let best = barPin, bd = Infinity;
+    if (!best) barItems.forEach((it) => { const d = Math.abs(angleOf(it.z.cx) - view.yaw); if (d < bd) { bd = d; best = it; } });
+    if (best === barOn) return;
+    if (barOn) barOn.btn.classList.remove('on');
+    best.btn.classList.add('on'); barOn = best;
+  }
+
   const tmp = new THREE.Vector3();
   function project(list) {
     let out = '';
@@ -475,7 +506,7 @@ const PLAZA = {
     if (!id) cursorHot(false);
     svg.classList.toggle('has-active', !!id);
     stage.classList.toggle('pointing', !!id);
-    caption.textContent = id ? byId[id].label : HINT;
+    barHint.textContent = id ? byId[id].label : HINT;
     dirty = true;
   }
 
@@ -511,7 +542,7 @@ const PLAZA = {
   function enterZone(id) {
     const z = byId[id];
     if (!z || busyFlag || inRoom) return;
-    setBusy(true); savedView = { ...view }; setActive(id); cursorHot(false);
+    setBusy(true); savedView = { ...view }; setActive(id); cursorHot(false); pinBar(null);
     document.body.classList.add('entering');
     const to = { yaw: angleOf(z.cx), cy: (IMG.horizonY - z.cyPx) / R, span: (z.hPx / R) * 0.62 };
     animateTo(to, reduceMotion ? 1 : 1150, () => {
@@ -579,7 +610,7 @@ const PLAZA = {
     } else if (pointers.size === 2) {
       const [a, b] = [...pointers.values()];
       pinch = { dist: Math.hypot(a.x - b.x, a.y - b.y), span: target.span };
-      drag = null;
+      drag = null; pinBar(null);
     }
   });
   stage.addEventListener('pointermove', (e) => {
@@ -603,7 +634,7 @@ const PLAZA = {
     drag.moved += Math.abs(dx) + Math.abs(dy);
     drag.lx = e.clientX; drag.ly = e.clientY;
     if (drag.moved > 6) {   // more than 6 px — a drag, never a click
-      stage.classList.add('dragging');
+      stage.classList.add('dragging'); pinBar(null);
       const k = radPerPx();
       target.yaw -= dx * k; vel = -dx * k;
       target.cy += dy * (view.span / vh);
@@ -626,7 +657,7 @@ const PLAZA = {
   stage.addEventListener('wheel', (e) => {
     e.preventDefault();
     if (inRoom || busyFlag) return;
-    anim = null;
+    anim = null; pinBar(null);
     target.span *= Math.exp(e.deltaY * 0.0012);
     clampView(target); dirty = true;
   }, { passive: false });
@@ -638,7 +669,7 @@ const PLAZA = {
     const eps = active ? 0.005 : 0.06;
     const list = dir > 0 ? ordered : [...ordered].reverse();
     const next = list.find((z) => (angleOf(z.cx) - cur) * dir > eps) || list[list.length - 1];
-    setActive(next.id); lookAt(next);
+    setActive(next.id); pinBar(next); lookAt(next);
   }
   $('prev').addEventListener('click', () => stepZone(-1));
   $('next').addEventListener('click', () => stepZone(1));
@@ -647,7 +678,7 @@ const PLAZA = {
   let restoringFocus = false;
   nav.addEventListener('focusin', (e) => {
     const id = e.target.dataset.room; if (!id || inRoom || busyFlag || restoringFocus) return;
-    setActive(id); lookAt(byId[id]);
+    setActive(id); pinBar(null); lookAt(byId[id]);
   });
   nav.addEventListener('focusout', () => { if (!inRoom && !busyFlag) setActive(null); });
   nav.addEventListener('click', (e) => { const id = e.target.dataset && e.target.dataset.room; if (id) enterZone(id); });
@@ -662,7 +693,7 @@ const PLAZA = {
     else if (e.key === '+' || e.key === '=') target.span *= 0.88;
     else if (e.key === '-') target.span /= 0.88;
     else return;
-    e.preventDefault(); anim = null; clampView(target); dirty = true;
+    e.preventDefault(); anim = null; pinBar(null); clampView(target); dirty = true;
   });
 
   /* ---------- frame loop: render only when something changed ---------- */
@@ -683,6 +714,7 @@ const PLAZA = {
     applyCamera();
     renderer.render(scene, camera);
     updateOverlay();
+    updateBar();
   }
 
   /* ---------- loading ---------- */

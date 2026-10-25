@@ -61,9 +61,22 @@ This plan describes the project as it is now. Stage numbers are kept as they wer
 
 **Geometry (measured on the picture):** spanDeg 210, horizonY 1000 (accepted by the user: at 1275 the side facades tilt; at 1000 they stay straight, only the floor rings bend at the edges). Building outlines from the sky boundary, base y ≈ 1300; 9 facade bands as perspective quads (see PLAZA.buildings). Video: centre x 3186, bottom 1825, height 672 (from the user's template).
 
-**Behaviour:** names engraved by code into the bands (Cinzel 600, ≤ 80% band width, one or two lines — whichever is larger); hover/focus = 50% dim + gold outline along each zone's own outline; Gia and the fountain are separate zones on the video plane (outlines from the video's alpha over all frames, Gia cut out of the fountain); when a building is active, Gia/fountain in front of it stay dimmed and cut its outline; click only on a move ≤ 6 px; camera turn + zoom 1.15 s, veil 0.38 s, then href or the placeholder room screen (name, placeholder text, "Back to the plaza"); Back/Esc restores the view; busy flag released by every finished/interrupted animation and by a 4 s safety timer; focus restore after Back does not start a camera move; ‹ › on phones/coarse pointers; keyboard Tab/Enter/Esc/arrows/+−; opening turn −29° → 0° over 2.4 s; reduced motion → poster only, no video request; no WebGL → message. `gia-fountain.mp4` loops all the time the page is open (paused only while the tab is hidden).
+**Behaviour:** names engraved by code into the bands (Cinzel 600, ≤ 80% band width, one or two lines — whichever is larger); hover/focus = 50% dim + gold outline along each zone's own outline; Gia and the fountain are separate zones on the video plane (outlines from the video's alpha over all frames, Gia cut out of the fountain); when a building is active, Gia/fountain in front of it stay dimmed and cut its outline; click only on a move ≤ 6 px; camera turn + zoom 1.15 s, veil 0.38 s, then href or the placeholder room screen (name, placeholder text, "Back to the plaza"); Back/Esc restores the view; busy flag released by every finished/interrupted animation and by a 4 s safety timer; focus restore after Back does not start a camera move; the building bar at the bottom (below) on both pages; ‹ › on phones/coarse pointers; keyboard Tab/Enter/Esc/arrows/+−; opening turn −29° → 0° over 2.4 s; reduced motion → poster only, no video request; no WebGL → message. `gia-fountain.mp4` loops all the time the page is open (paused only while the tab is hidden).
 
 **Click targets:** Digital Banker → `digital-banker/gia/index.html` (Stage 10), Gia → `meet-gia/index.html`; Glonari Journey, Glonari Pulse, Glonari News, Global Connections, Global Dream, Glonari Commercial, Glonari Homes, Signature Personas, fountain → placeholder room screen.
+
+### Building bar and hint
+
+On both `index.html` and `mobile/index.html`: `<div id="bar">` at the bottom centre above the safe area (`min(100vw − 32px, 760px)` wide), filled by `plaza.js` from `PLAZA.buildings`.
+
+- **Icons:** 9 identical gold line icons (classical building: pediment + columns, inline SVG `BAR_ICON` in `plaza.js`), one per building left to right; Gia and the fountain are not in the bar.
+- **Line and dots:** a thin gold line through the centres of 9 dots, one under each icon.
+- **Active icon:** the building whose centre is nearest `view.yaw` (the screen centre), recomputed after every rendered frame (`updateBar()` in `tick()`), so it follows drag, inertia, zoom, ‹ ›, keyboard and animations. Exception (`barPin`): after a click on an icon or ‹ › onto a building, that building's icon stays active until the visitor moves the camera (drag > 6 px, pinch, wheel, arrow/+− keys, Tab focus on a zone, entering a zone) — at the picture's edges the camera cannot centre Journey / Personas. Active = icon 1.45× and brighter with a glow, its dot 1.7× with a glow.
+- **Click on an icon:** `setActive` + `lookAt` — the camera turns to the building and highlights it (50% dim + gold outline), exactly like ‹ ›; it never enters (entering is a click on the building itself). Ignored in a room or during an animation.
+- **Hint (`.bar-hint`, Cinzel, spaced capitals, thin gold lines left and right):** `PLAZA.hint` "Drag to see more" / `PLAZA.hintTouch` "Swipe to see more" (coarse pointer); while a zone is hovered or focused it shows the zone's label ("Enter …", "Meet Gia", "Glonari") (instruction §9). `aria-live="polite"`.
+- **Visibility:** fades in with `body.ready` (buttons not clickable before it); hidden and not clickable during `body.entering` and `body.in-room`. Reduced motion: no transitions.
+- **Keyboard:** the icons are `tabindex="-1"` and the icon row is `aria-hidden`; keyboard access stays on the `#rooms-nav` buttons, so the Tab order is unchanged.
+- **Phones:** the bar and ‹ › (vertical centre, instruction §10) do not overlap and drive the same camera.
 
 ### Custom cursor (copy of glonari.com)
 
@@ -74,7 +87,9 @@ On both `index.html` and `mobile/index.html`; shown only under `(hover: hover) a
 - **JS (`plaza.js`, runs only when both divs exist and the pointer is fine):** `requestAnimationFrame` loop; the dot at the mouse (`translate(x, y) translate(-50%, -50%)`), the ring trailing by 0.18 per frame (1 under reduced motion); `.is-hot` set by the same mouse check over `path[data-room]` that turns the zone highlight on, cleared when the highlight goes off and on entering a zone (keyboard focus does not set it); `.is-away` on `pointerleave` / `pointerenter` of the page.
 
 **Acceptance criteria:**
-- [x] 1600×900: loads, no console errors, no 404; all 11 zones present; captions "Enter …" / "Meet Gia" / "Glonari".
+- [x] 1600×900: loads, no console errors, no 404; all 11 zones present.
+- [x] Building bar, 1600×900 and 390×844: 9 icons, line through the dots, hint "Drag to see more" / "Swipe to see more"; on hover/focus the hint shows "Enter …" / "Meet Gia" / "Glonari".
+- [x] The active icon follows drag, inertia, zoom and ‹ ›; a click on an icon turns to and highlights its building without entering, and its icon (Journey and Personas included) stays active until the visitor moves the camera; the bar hides on entering and in a room and returns after Back/Esc; Tab order unchanged; on 390×844 the bar and ‹ › do not overlap.
 - [x] 10 cycles enter → Back/Esc → drag → next enter without a lock-up.
 - [x] A 10 px move on a zone does not enter it.
 - [x] Left and right edges: Journey and Signature Personas reachable and enterable.

@@ -46,7 +46,9 @@
   <main id="stage" aria-label="Glonari plaza. Drag to look around; choose a building to enter.">
     <svg id="overlay" aria-hidden="true"></svg>
   </main>
-  <p id="caption" aria-live="polite"></p>
+  <!-- Building bar (2026-10-25, Stage 21 / §31): same as index.html; the
+       ‹ › buttons stay (instruction §10) and drive the same camera. -->
+  <div id="bar"></div>
   <nav id="rooms-nav" aria-label="Buildings"></nav>
   <button class="step" id="prev" type="button" aria-label="Previous building"><svg viewBox="0 0 18 18" aria-hidden="true"><path d="M11.5 3 5.5 9l6 6" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
   <button class="step" id="next" type="button" aria-label="Next building"><svg viewBox="0 0 18 18" aria-hidden="true"><path d="m6.5 3 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>

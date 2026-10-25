@@ -27,8 +27,9 @@
 }
 :root[data-theme="dark"] { --card-bg: rgba(38, 24, 11, 0.9); --card-ink: #f6e6c6; --card-muted: #cdb38a; }
 *, *::before, *::after { box-sizing: inherit; }
-html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); }
-body { height: 100%; margin: 0; overflow: hidden; background: var(--walnut); color: var(--ivory); font-family: var(--serif); }
+html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); overscroll-behavior: none; }
+body { height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; background: var(--walnut); color: var(--ivory); font-family: var(--serif);
+  -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
 #stage { position: fixed; inset: 0; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
 #stage.dragging { cursor: grabbing; }
@@ -36,8 +37,8 @@ body { height: 100%; margin: 0; overflow: hidden; background: var(--walnut); col
 /* Custom cursor (2026-10-25, Stage 21 / §31) — a copy of glonari.com's
    .gg-dot/.gg-ring: the dot sits on the mouse, the ring trails it; over a
    zone the dot opens into a 52px circle around the native hand and the ring
-   fades. Mouse/trackpad only; the two divs exist only in index.html, plaza.js
-   moves them. The native cursor is hidden over the panorama (drag too) and
+   fades. Mouse/trackpad only; the two divs are in index.html and
+   mobile/index.html, plaza.js moves them. The native cursor is hidden over the panorama (drag too) and
    is the hand over a zone. */
 .gg-dot,.gg-ring{z-index:90;pointer-events:none;border-radius:50%;display:none;position:fixed;top:0;left:0;transform:translate(-50%,-50%)}
 .gg-dot{background:#ecc9a3;width:8px;height:8px;transition:width .25s,height .25s,background .25s;box-shadow:0 0 0 1.5px #16233fb3,0 0 10px 2px #ecc9a3b3}

@@ -3,16 +3,14 @@
 ## Mandatory documentation updates
 
 **Scope: this applies to the entire project, including `mobile/`.** The
-"scene" and "interactive elements" below are not just the desktop scene in
-the repo root — a change to the mobile scene (`mobile/index.html`,
-`mobile/styles.css`, `mobile/main.js`, or any shared file like
-`section-modal.js`/`section-modal.css`/`design-tokens.css` insofar as the
-change affects mobile behavior) is held to exactly the same rule as a
-change to root `index.html`/`styles.css`/`main.js`. Do not treat `mobile/`
-as a separate, lighter-weight tree just because it started as a static
-image with no plan/PRD coverage of its own — Stage 14 / PRD §19 (and any
-future mobile-specific stage/section) are the same kind of "confirmed
-decision" as anything about the desktop scene.
+first screen has two entry points — `index.html` (desktop) and
+`mobile/index.html` (phones and narrow windows) — that share `plaza.js`
+and `plaza.css`. A change to `mobile/index.html`, or to `plaza.js` /
+`plaza.css` insofar as it affects mobile behavior, is held to exactly the
+same rule as a change affecting desktop. Mobile is covered by
+DEVELOPMENT_PLAN.md Stage 14 / Stage 21 and PRODUCT_REQUIREMENTS.md
+§19 / §31 — the same kind of "confirmed decision" as anything about the
+desktop scene.
 
 After EVERY completed task that changes, **on desktop or on mobile**:
 - the scene's movement/parallax architecture
@@ -27,17 +25,20 @@ After EVERY completed task that changes, **on desktop or on mobile**:
 1. **DEVELOPMENT_PLAN.md** — find the relevant Stage and update:
    - acceptance criteria, if behavior changed
    - stage status
-   - when superseding/replacing a previously accepted decision, add a block
-     in the existing style: `> **SUPERSEDED (YYYY-MM-DD)** — [what changed],
-     replaced by [what it's now], see chat/prompt from [date]`, without
-     deleting the old text — the history of decisions must stay visible,
-     never erased.
+   - when a decision is replaced, rewrite the item so it describes only the
+     current decision and delete the old text, including any existing
+     SUPERSEDED blocks. The documents describe the project as it is now;
+     history lives in git.
 
-2. **PRODUCT_REQUIREMENTS.md** — find the relevant item (usually in §23
-   "Confirmed requirements", but check other sections too if the decision
-   is echoed there, e.g. §16 "Motion principles") and update with the same
-   logic: don't delete, mark SUPERSEDED with a date and a short explanation
-   of what replaced the old decision.
+2. **PRODUCT_REQUIREMENTS.md** — find the relevant item (and every other
+   section that echoes the same decision) and update it the same way:
+   keep only the current decision, delete the outdated one.
+
+## Removing obsolete material
+
+Anything the project no longer needs (outdated decisions in the docs,
+unused files and code) is deleted, not kept. Before deleting anything,
+show the full list and wait for explicit confirmation.
 
 ## Reporting on completed work
 

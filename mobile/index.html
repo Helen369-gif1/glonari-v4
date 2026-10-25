@@ -4,45 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <script>
-    // Reverse device gate (2026-08-25, later still — see
-    // DEVELOPMENT_PLAN.md Stage 14 / PRODUCT_REQUIREMENTS.md §19 for the
-    // full decision writeup). The forward gate in the desktop
-    // `index.html` sends narrow viewports here; this had no matching
-    // reverse check at all, a known, disclosed gap. Deliberately NOT
-    // keyed on viewport width alone, though — a phone rotated to
-    // landscape can easily exceed 767px, and must NOT be sent to the
-    // desktop scene on that basis: desktop's mouse-hover/parallax model
-    // has no touch equivalent (this project decided mobile itself gets
-    // no movement/hover equivalent, which is a separate question from
-    // whether desktop's own model works on a touchscreen — it doesn't).
-    // Gated on width AND `(hover: hover) and (pointer: fine)` — the same
-    // primary-input media features this project's own desktop `main.js`
-    // already uses for its cursor decision (`finePointerQuery`), reused
-    // here for consistency rather than introducing a second detection
-    // philosophy for the same underlying question ("is this a
-    // mouse-driven device"). A touch-primary device never matches this,
-    // landscape or not, regardless of width — only a genuine
-    // mouse/trackpad-driven wide window redirects, which rescues the
-    // one real gap this leaves open: a desktop user loading this page
-    // (directly, or via the forward gate) with a narrow BROWSER WINDOW,
-    // then widening it without a reload.
-    //
-    // Known, accepted imprecision (same tradeoff `finePointerQuery`
-    // already carries on desktop): `pointer`/`hover` reflect the
-    // PRIMARY input, so a touch+mouse hybrid device (e.g. a 2-in-1
-    // laptop used via its touchscreen) can still match if its primary
-    // input is classified as mouse/trackpad — not solved here, consistent
-    // with how the existing desktop gate already treats that ambiguity.
-    //
-    // Checked once synchronously on load (mirroring the forward gate,
-    // and closing the "deep-links directly into mobile/index.html stays
-    // there" gap) AND live via the same 'change'-event + debounce pattern
-    // as the forward gate, so a rotation/resize after load is caught too.
-    // 2026-10-13: the width/aspect part is now the exact negation of the
-    // desktop gate ('(max-width: 767px), not all and (min-aspect-ratio:
-    // 3/2)') — at least 768px wide AND at least 3:2 — so a window the
-    // desktop page would send here is never sent back (no redirect loop).
-    // The (hover)/(pointer) part is unchanged.
+    // Reverse device gate (DEVELOPMENT_PLAN.md Stage 14 /
+    // PRODUCT_REQUIREMENTS.md §19): back to ../index.html only when the
+    // window is at least 768px wide and at least 3:2 — the exact negation of
+    // the forward gate in index.html, so no redirect loop — AND has a
+    // mouse/trackpad, so a phone rotated to landscape stays here. Checked on
+    // load and live via 'change', debounced 300ms. `hover`/`pointer` reflect
+    // the primary input, so a touch+mouse hybrid may still match.
     var desktopQuery = window.matchMedia('(min-width: 768px) and (min-aspect-ratio: 3/2) and (hover: hover) and (pointer: fine)');
 
     function goDesktop() {
@@ -69,9 +37,6 @@
   </script>
   <title>Glonari — Global</title>
   <link rel="icon" href="data:," />
-  <link rel="stylesheet" href="../design-tokens.css" />
-  <link rel="stylesheet" href="../section-modal.css" />
-  <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="../plaza.css" />
 </head>
 <body>
@@ -95,18 +60,6 @@
   </section>
   <div id="veil"></div>
 
-  <!-- Same #modal-overlay/#modal-card markup as desktop's index.html —
-       required as-is by the shared section-modal.js/section-modal.css —
-       plus a corner × (mobile only; wired in main.js). -->
-  <div id="modal-overlay">
-    <div id="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-desc">
-      <button class="modal-x" type="button" aria-label="Close">×</button>
-      <h2 id="modal-title"></h2>
-      <p id="modal-desc"></p>
-      <button id="modal-close" type="button">Close</button>
-    </div>
-  </div>
-
   <!-- Custom cursor (2026-10-25, Stage 21 / §31): same as index.html, for a
        mouse in a window narrower than 3:2; plaza.css/plaza.js show it only
        under (hover: hover) and (pointer: fine), so phones never get it. -->
@@ -115,7 +68,5 @@
 
   <script src="../digital-banker/atrium/vendor/three.min.js"></script>
   <script src="../plaza.js" data-base="../"></script>
-  <script src="../section-modal.js" defer></script>
-  <script src="main.js" defer></script>
 </body>
 </html>

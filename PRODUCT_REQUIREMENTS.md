@@ -8,7 +8,7 @@ This document describes the project as it is now. Section numbers are kept as th
 
 ## 1. Product overview
 
-Glonari Global Scene is the Glonari first screen: the Glonari Plaza, a 210° panorama of nine buildings in an arc with Gia on the fountain in front of them, built on the Digital Banker atrium technology. The visitor looks around, hovers or taps a building, and enters it. Digital Banker and Gia lead into the connected sub-sites (Digital Banker → GIA → Atrium → Global Reserve / Global Dream; Meet Gia); the other buildings and the globe on the fountain open a placeholder room screen.
+Glonari Global Scene is the Glonari first screen: the Glonari Plaza, a 210° panorama of nine buildings in an arc with Gia on the fountain in front of them, built on the Digital Banker atrium technology. On the first visit in a browser tab a short intro video leads into it. The visitor looks around, hovers or taps a building, and enters it. Digital Banker and Gia lead into the connected sub-sites (Digital Banker → GIA → Atrium → Global Reserve / Global Dream; Meet Gia); the other buildings and the globe on the fountain open a placeholder room screen.
 
 ## 2. Product goals
 
@@ -17,7 +17,7 @@ Glonari Global Scene is the Glonari first screen: the Glonari Plaza, a 210° pan
 
 ## 3. Current state of the project
 
-Static site, no build step. Entry points: `index.html` (desktop) and `mobile/index.html` (phones and narrow windows, §19), both showing the plaza (`plaza.js`, `plaza.css`, `assets/plaza-*.webp`, `assets/plaza-clouds.png`, `assets/gia-fountain.*`, three.js from `digital-banker/atrium/vendor/`). `tools/make-sky-mask.py` remakes the sky masks (`assets/plaza-sky-*.webp`) when the panorama changes. Sub-sites in their own folders: `digital-banker/` (GIA, Atrium), `global-reserve/`, `global-dream/`, `meet-gia/` — each governed by its own project files.
+Static site, no build step. Entry points: `index.html` (desktop) and `mobile/index.html` (phones and narrow windows, §19), both showing the plaza (`plaza.js`, `plaza.css`, `assets/plaza-*.webp`, `assets/plaza-clouds.png`, `assets/gia-fountain.*`, the intro video `assets/plaza-intro*` (§32), three.js from `digital-banker/atrium/vendor/`). `tools/make-sky-mask.py` remakes the sky masks (`assets/plaza-sky-*.webp`) when the panorama changes. Sub-sites in their own folders: `digital-banker/` (GIA, Atrium), `global-reserve/`, `global-dream/`, `meet-gia/` — each governed by its own project files.
 
 ## 4. Existing technical structure
 
@@ -25,7 +25,7 @@ Plain HTML/CSS and vanilla JavaScript; no framework, bundler or package manifest
 
 ## 6. Main user experience
 
-The page opens on the plaza with a short opening turn; translucent clouds drift slowly across the sky behind the buildings. The visitor drags (or uses ‹ › on touch, arrows on the keyboard) to look around; a bar of nine building icons at the bottom marks the building nearest the screen centre, and clicking an icon turns the camera to that building and highlights it. Hovering or focusing a zone dims the rest and outlines it in gold and shows its label in the hint under the bar; a click or tap on the zone turns the camera to it and enters it.
+On the first visit in a browser tab a short intro video plays and dissolves into the plaza, which opens straight on its opening view (§32); without the intro (later visits in the same tab) the plaza opens with a short opening turn. Translucent clouds drift slowly across the sky behind the buildings. The visitor drags (or uses ‹ › on touch, arrows on the keyboard) to look around; a bar of nine building icons at the bottom marks the building nearest the screen centre, and clicking an icon turns the camera to that building and highlights it. Hovering or focusing a zone dims the rest and outlines it in gold and shows its label in the hint under the bar; a click or tap on the zone turns the camera to it and enters it.
 
 ## 7. Functional requirements
 
@@ -35,6 +35,7 @@ The page opens on the plaza with a short opening turn; translucent clouds drift 
 - FR-4: Reduced-motion support (§21).
 - FR-5: Phones and narrow windows are routed to `mobile/` and back (§19).
 - FR-6: A building bar (9 icons, line with dots, hint) on desktop and phones for navigating between the buildings (§31).
+- FR-7: An intro video before the plaza, once per browser tab, on desktop and phones, with "Enter the plaza" to skip it (§32).
 
 ## 14. Click behavior: the Digital Banker chain
 
@@ -62,7 +63,7 @@ Motion is smooth, soft and eased — never abrupt.
 
 ## 21. Reduced-motion requirements
 
-Every animation respects `prefers-reduced-motion: reduce`. On the plaza: poster only, no video request, no cursor size transition, the cursor ring follows without lag, the building bar changes without transitions, the clouds stand still.
+Every animation respects `prefers-reduced-motion: reduce`. On the plaza: no intro video (§32), none of its files requested; Gia — poster only, no video request, no cursor size transition, the cursor ring follows without lag, the building bar changes without transitions, the clouds stand still.
 
 ## 22. Technical constraints
 
@@ -72,6 +73,7 @@ Every animation respects `prefers-reduced-motion: reduce`. On the plaza: poster 
 ## 23. Confirmed requirements
 
 - First screen (desktop and mobile) is the Glonari Plaza 210° (§31): atrium technology, 9 buildings + Gia + the globe as zones, placeholder room screen for the buildings without a target, building bar with the "Drag / Swipe to see more" hint, translucent clouds drifting across the sky behind the buildings.
+- Intro video before the plaza (§32): once per browser tab, landscape on desktop and portrait on phones, "ENTER THE PLAZA →" to skip, 1.1 s dissolve into the plaza's opening view (no opening turn under it); none under reduced motion; skipped at once if the video cannot play.
 - Chain: Plaza → GIA → Atrium → Global Reserve or Global Dream; Gia → Meet Gia; explicit back links (§14).
 - All user-facing copy in English (§15).
 - Vanilla JavaScript, no build step (§22).
@@ -92,6 +94,7 @@ Source: DEVELOPMENT_PLAN.md Stage 21.
 - **Click targets:** Digital Banker → `digital-banker/gia/index.html`; Gia → `meet-gia/index.html`; all other buildings and the globe → placeholder room screen with "Back to the plaza". No new links.
 - **Gia on the fountain:** `assets/gia-fountain.mp4` (double colour/alpha video) at the floor circle below the steps, placed by the user's template (centre x 3186, bottom 1825, height 672); loops all the time the visitor is on the page.
 - **Phones:** same plaza, swipe, ‹ › buttons, building bar, clouds, half-size picture.
+- **Opening:** after the intro video (§32) the plaza opens straight on its opening view, Digital Banker in the centre; without the intro it opens with a short turn (−29° → 0° over 2.4 s); under reduced motion — no turn.
 - **Open:** manual check in real browsers and on real phones.
 
 ### Building bar
@@ -120,3 +123,15 @@ Source: DEVELOPMENT_PLAN.md Stage 21.
 - Over the panorama the system cursor is hidden ("circle in a circle"); over a building, Gia or the globe the dot opens into a 52 px gold circle around the system hand and the ring fades ("hand in a circle").
 - Leaving the page hides both; reduced motion — the ring follows without lag, no size animation.
 - Phones and other touch devices: no cursor.
+
+## 32. Intro video before the plaza
+
+Source: DEVELOPMENT_PLAN.md Stage 22. Only the idea is taken from glonari.com; the video and the design are our own.
+
+- **When:** on the first visit in a browser tab, a 6.5 s silent video plays full screen over the plaza, once, not looped; its poster shows until it starts. Computers get the landscape video, phones the portrait one.
+- **Into the plaza:** the video's last frame is the plaza's opening view; when it ends, the video dissolves into the plaza in 1.1 s. The plaza is already working by then — Gia moving, clouds drifting, the building bar shown — and it opens straight on that view, without the opening turn.
+- **"ENTER THE PLAZA →":** visible from the first second, skips the rest of the video with the same dissolve. In the gold of the zone outlines, always on one line; on a computer at the bottom right, on a phone at the bottom centre below the fountain and Gia, above the safe area.
+- **Once per tab:** after the video has ended or the button was pressed, the tab does not show it again — not on reload, not when moving between the computer and phone pages, not when coming back from a sub-site. A new tab shows it again.
+- **Reduced motion:** no intro; the video is not downloaded; the plaza opens at once.
+- **If the video cannot play** (autoplay blocked, load error, no start within 3 s): the intro is skipped at once and the plaza opens as usual.
+- **Keyboard:** while the intro is shown, only the button can be focused, and the plaza behind it does not move.

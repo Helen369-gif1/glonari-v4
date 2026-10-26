@@ -8,8 +8,8 @@ first screen has two entry points — `index.html` (desktop) and
 and `plaza.css`. A change to `mobile/index.html`, or to `plaza.js` /
 `plaza.css` insofar as it affects mobile behavior, is held to exactly the
 same rule as a change affecting desktop. Mobile is covered by
-DEVELOPMENT_PLAN.md Stage 14 / Stage 21 and PRODUCT_REQUIREMENTS.md
-§19 / §31 — the same kind of "confirmed decision" as anything about the
+DEVELOPMENT_PLAN.md Stage 14 / Stage 21 / Stage 22 and PRODUCT_REQUIREMENTS.md
+§19 / §31 / §32 — the same kind of "confirmed decision" as anything about the
 desktop scene.
 
 After EVERY completed task that changes, **on desktop or on mobile**:

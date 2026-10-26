@@ -115,6 +115,51 @@ const PLAZA = {
   roomPlaceholder: 'This room is being prepared. Its content will appear here soon.',
 };
 
+/* ---------- intro video (DEVELOPMENT_PLAN.md Stage 22 / PRODUCT_REQUIREMENTS.md §32) ----------
+   The inline script in the page's <head> puts .intro on <html> only once per
+   tab and never under reduced motion. The plaza loads and starts underneath
+   (shut to the keyboard); the layer dissolves in 1.1 s when the video ends or
+   on "Enter the plaza" — only then is the tab marked as having seen it — and
+   is then removed. A video that does not start is skipped at once. */
+(() => {
+  'use strict';
+  const root = document.documentElement, intro = document.getElementById('intro');
+  if (!intro) return;
+  if (!root.classList.contains('intro')) { intro.remove(); return; }
+  const FADE = 1100, START_LIMIT = 3000;
+  const video = intro.querySelector('video'), enter = document.getElementById('intro-enter');
+  const dot = document.querySelector('.gg-dot');
+  const behind = [...document.body.children].filter((el) => el !== intro && el.tagName !== 'SCRIPT');
+  behind.forEach((el) => { el.inert = true; });
+  let done = false;
+  function remove() {
+    video.removeAttribute('src'); video.load();
+    intro.remove();
+    root.classList.remove('intro');
+    behind.forEach((el) => { el.inert = false; });
+  }
+  function finish(seen) {
+    if (done) return;
+    done = true; clearTimeout(startTimer);
+    if (dot) dot.classList.remove('is-hot');
+    if (!seen) { remove(); return; }
+    try { sessionStorage.setItem('plaza-intro-seen', '1'); } catch (e) {}
+    intro.classList.add('out');
+    setTimeout(remove, FADE);
+  }
+  const startTimer = setTimeout(() => finish(false), START_LIMIT);
+  video.addEventListener('playing', () => clearTimeout(startTimer), { once: true });
+  video.addEventListener('ended', () => finish(true));
+  video.addEventListener('error', () => finish(false));
+  enter.addEventListener('click', () => finish(true));
+  if (dot) {
+    enter.addEventListener('pointerenter', () => dot.classList.add('is-hot'));
+    enter.addEventListener('pointerleave', () => dot.classList.remove('is-hot'));
+  }
+  video.src = intro.dataset.video;
+  video.play().catch(() => finish(false));
+})();
+
 /* ====================================================================== */
 (() => {
   'use strict';
@@ -795,7 +840,7 @@ const PLAZA = {
   nav.addEventListener('click', (e) => { const id = e.target.dataset && e.target.dataset.room; if (id) enterZone(id); });
   addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && inRoom) { leaveRoom(); return; }
-    if (inRoom || busyFlag) return;
+    if (inRoom || busyFlag || document.documentElement.classList.contains('intro')) return;
     const step = 0.09;
     if (e.key === 'ArrowLeft') target.yaw -= step;
     else if (e.key === 'ArrowRight') target.yaw += step;
@@ -845,7 +890,9 @@ const PLAZA = {
       buildPanorama(img);
       buildClouds();
       resize();
-      if (!reduceMotion) {   // opening turn −29° → 0° over 2.4 s (instruction §10)
+      // opening turn −29° → 0° over 2.4 s (instruction §10); under the intro
+      // video the plaza opens straight on 0°, the intro's last frame (Stage 22)
+      if (!reduceMotion && !document.documentElement.classList.contains('intro')) {
         view.yaw = -0.5; clampView(view); Object.assign(target, view);
         animateTo(clampView({ yaw: 0, cy: view.cy, span: view.span }), 2400);
       }

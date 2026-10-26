@@ -35,11 +35,26 @@
       });
     }
   </script>
+  <script>
+    // Intro video (DEVELOPMENT_PLAN.md Stage 22 / PRODUCT_REQUIREMENTS.md
+    // §32): same as index.html — the tab's flag is shared by both pages.
+    try {
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !sessionStorage.getItem('plaza-intro-seen')) {
+        document.documentElement.classList.add('intro');
+      }
+    } catch (e) {}
+  </script>
   <title>Glonari — Global</title>
   <link rel="icon" href="data:," />
   <link rel="stylesheet" href="../plaza.css" />
 </head>
 <body>
+  <!-- Intro video (Stage 22 / §32): same as index.html, with the portrait
+       video and poster. -->
+  <div id="intro" data-video="../assets/plaza-intro-mobile.mp4" style="background-image: url('../assets/plaza-intro-mobile-poster.webp')">
+    <video muted autoplay playsinline preload="auto" aria-hidden="true"></video>
+    <button id="intro-enter" type="button">Enter the plaza <span aria-hidden="true">→</span></button>
+  </div>
   <!-- Glonari Plaza 210° (2026-10-24, DEVELOPMENT_PLAN.md Stage 21 /
        PRODUCT_REQUIREMENTS.md §31): the atrium technology — plaza.js draws the
        panorama, the engraved names, Gia on the fountain and the 11 zones. -->

@@ -43,11 +43,29 @@
     });
   }
 </script>
+<script>
+  // Intro video (DEVELOPMENT_PLAN.md Stage 22 / PRODUCT_REQUIREMENTS.md
+  // §32): once per tab, never under reduced motion. Decided here, before the
+  // first paint, so a skipped intro never flashes; plaza.js plays it,
+  // dissolves it and removes it.
+  try {
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !sessionStorage.getItem('plaza-intro-seen')) {
+      document.documentElement.classList.add('intro');
+    }
+  } catch (e) {}
+</script>
 <title>Glonari Global Scene</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="plaza.css">
 </head>
 <body>
+  <!-- Intro video (Stage 22 / §32): over the whole scene, shown only under
+       html.intro. The poster is the layer's background (fetched only when
+       the layer is shown); plaza.js sets the video's src from data-video. -->
+  <div id="intro" data-video="assets/plaza-intro.mp4" style="background-image: url('assets/plaza-intro-poster.webp')">
+    <video muted autoplay playsinline preload="auto" aria-hidden="true"></video>
+    <button id="intro-enter" type="button">Enter the plaza <span aria-hidden="true">→</span></button>
+  </div>
   <!-- Glonari Plaza 210° (2026-10-24, DEVELOPMENT_PLAN.md Stage 21 /
        PRODUCT_REQUIREMENTS.md §31): the atrium technology — plaza.js draws the
        panorama, the engraved names, Gia on the fountain and the 11 zones. -->

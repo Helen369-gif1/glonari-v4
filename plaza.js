@@ -37,6 +37,33 @@ const PLAZA = {
     frameW: 1264, frameH: 628,
   },
 
+  // Clouds drifting across the sky, only where the panorama shows sky (the
+  // mask: white = sky; made by tools/make-sky-mask.py, covers rows 0..bottom).
+  // Each layer cuts the sky into slots of `slot` panorama pixels; a slot holds
+  // at most one cloud (`density` — the share of slots that have one), the
+  // PNG's clouds in turn (`pieces`: [x0, y0, x1, y1] in PNG pixels), at a
+  // random place in the slot, the whole cloud between y = band[0] and band[1]
+  // (above 0 it is cut by the picture's top edge), every other one mirrored;
+  // `seed` makes layers differ (and sets the opening view). scale — PNG pixel ->
+  // panorama pixels (above 1 the PNG turns soft); speed — panorama pixels per
+  // second, left to right; reduced motion — still. Layers are drawn in order.
+  clouds: {
+    image: 'assets/plaza-clouds.png',
+    mask: { full: 'assets/plaza-sky-6516.webp', small: 'assets/plaza-sky-3258.webp' },
+    bottom: 1040,
+    pieces: [[39,23,561,196],[903,39,1177,136],[1199,96,1659,290],[622,161,928,245],[26,243,311,324],[1105,293,1400,376]],
+    fps: 30,           // frame cap while only the clouds move
+    // Opening view, 1600×900: the screen's top edge is y ≈ 0 in the centre, 121 at ±400 px,
+    // 225 at ±600 px, 323 at the sides (the cylinder lifts the sky towards the edges); roofs from y ≈ 540.
+    // The screen is ≈ 3830 panorama px wide there: 36 px/s crosses it in ≈ 1¾ min.
+    // Three layers — high, middle, low sky — so the clouds are spread over the whole sky.
+    layers: [
+      { scale: 1, slot: 1050, density: 1, band: [0, 230], speed: 34, opacity: 0.35, seed: 0 },
+      { scale: 1, slot: 1050, density: 1, band: [150, 380], speed: 36, opacity: 0.35, seed: 2 },
+      { scale: 1, slot: 1050, density: 1, band: [300, 500], speed: 38, opacity: 0.35, seed: 4 },
+    ],
+  },
+
   // Corner rounding of every outline, in panorama pixels (Gia and the fountain:
   // converted to frame pixels so it looks the same on screen). An outline point
   // may carry its own radius as a third number: [x, y, r].
@@ -154,7 +181,9 @@ const PLAZA = {
   /* ---------- view ---------- */
   const view = { yaw: 0, cy: (TAN_TOP + TAN_BOT) / 2, span: MAX_SPAN };
   const target = { ...view };
-  let vel = 0, dirty = true, anim = null;
+  // dirty — the camera or a highlight changed (picture, outlines, building bar);
+  // redraw — only the picture changed (a video frame, the clouds): at most PLAZA.clouds.fps a second
+  let vel = 0, dirty = true, redraw = false, lastDraw = 0, anim = null;
   let vw = 1, vh = 1, aspect = 1;
 
   function clampView(v) {
@@ -323,7 +352,7 @@ const PLAZA = {
       if (hostMat.uniforms.map.value !== vtex) { vtex.needsUpdate = true; show(vtex); }
     };
     if ('requestVideoFrameCallback' in v) {
-      const onFrame = () => { toVideo(); dirty = true; v.requestVideoFrameCallback(onFrame); };
+      const onFrame = () => { toVideo(); redraw = true; v.requestVideoFrameCallback(onFrame); };
       v.requestVideoFrameCallback(onFrame);
     } else {
       v.addEventListener('timeupdate', toVideo);
@@ -338,6 +367,88 @@ const PLAZA = {
     if (!hostVideo) return;
     if (document.hidden) hostVideo.pause(); else playHost();
   });
+
+  /* ---------- clouds: bands of the same cylinder over the sky, shown through the sky mask ---------- */
+  const CL = PLAZA.clouds;
+  const CL_CYCLE = CL.pieces.length * 3;     // a layer's slot pattern repeats every 18 slots (wider than the picture)
+  let cloudLayers = [], cloudFade = 0, cloudLast = 0;
+  const cloudShader = {
+    vertexShader: alphaShader.vertexShader,
+    // panorama pixel -> slot -> the slot's cloud (hash of the slot number) -> PNG pixel;
+    // the PNG is premultiplied, so colour and alpha are both scaled by mask × opacity
+    fragmentShader: `uniform sampler2D map, mask; uniform vec4 pieces[${CL.pieces.length}]; uniform vec2 texSize;
+      uniform float offset, scale, slot, density, band0, bandH, opacity, seed, width, bottom; varying vec2 vUv;
+      float h(float k, float s){ return fract(sin(k * 12.9898 + s * 78.233 + seed * 37.719) * 43758.5453); }
+      void main(){
+        float px = vUv.x * width - offset, py = (1.0 - vUv.y) * bottom;
+        float k = floor(px / slot), kk = mod(k, ${CL_CYCLE}.0);
+        float sel = mod(kk + seed, ${CL.pieces.length}.0);   // the PNG's clouds in turn, so all of them appear
+        vec4 r = pieces[0];
+        for (int i = 1; i < ${CL.pieces.length}; i++) if (float(i) == sel) r = pieces[i];
+        vec2 size = (r.zw - r.xy) * scale;
+        vec2 q = vec2(px - k * slot - h(kk, 3.0) * max(0.0, slot - size.x), py - band0 - h(kk, 4.0) * max(0.0, bandH - size.y)) / size;
+        float on = step(h(kk, 1.0), density) * step(0.0, q.x) * step(q.x, 1.0) * step(0.0, q.y) * step(q.y, 1.0);
+        if (h(kk, 5.0) > 0.5) q.x = 1.0 - q.x;
+        vec2 t = mix(r.xy, r.zw, clamp(q, 0.0, 1.0)) / texSize;
+        gl_FragColor = texture2D(map, vec2(t.x, 1.0 - t.y)) * (on * opacity * texture2D(mask, vUv).r);
+      }`,
+  };
+  function buildClouds() {
+    const tan1 = (IMG.horizonY - CL.bottom) / R, a0 = angleOf(0), a1 = angleOf(W), seg = 160, pos = [], uv = [], idx = [];
+    for (let i = 0; i <= seg; i++) {
+      const t = i / seg, a = a0 + (a1 - a0) * t, x = Math.sin(a), z = -Math.cos(a);
+      pos.push(x, TAN_TOP, z, x, tan1, z); uv.push(t, 1, t, 0);
+      if (i < seg) { const k = i * 2; idx.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    geo.setIndex(idx);
+    const load = (src) => new Promise((ok, fail) => new THREE.TextureLoader().load(url(src), ok, undefined, fail));
+    // no clouds at all unless both the clouds and the mask have loaded
+    Promise.all([load(CL.image), load(small ? CL.mask.small : CL.mask.full)]).then(([map, mask]) => {
+      map.premultiplyAlpha = true;
+      map.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      // the mask is sampled without mipmaps, so it never spreads onto a building when zoomed out
+      mask.minFilter = THREE.LinearFilter; mask.generateMipmaps = false;
+      const pieces = CL.pieces.map((p) => new THREE.Vector4(...p));
+      const texSize = new THREE.Vector2(map.image.width, map.image.height);
+      cloudLayers = CL.layers.map((L, i) => {
+        const mat = new THREE.ShaderMaterial({
+          uniforms: {
+            map: { value: map }, mask: { value: mask }, pieces: { value: pieces }, texSize: { value: texSize },
+            offset: { value: (i / CL.layers.length) * L.slot }, scale: { value: L.scale }, slot: { value: L.slot }, density: { value: L.density },
+            band0: { value: L.band[0] }, bandH: { value: L.band[1] - L.band[0] },
+            opacity: { value: reduceMotion ? L.opacity : 0 }, seed: { value: L.seed }, width: { value: W }, bottom: { value: CL.bottom },
+          },
+          ...cloudShader,
+          side: THREE.DoubleSide, transparent: true, depthTest: false, depthWrite: false,
+          blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor,
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.renderOrder = 1 + i * 0.1;       // over the panorama, under Gia (renderOrder 3)
+        scene.add(mesh);
+        return { L, u: mat.uniforms };
+      });
+      if (reduceMotion) cloudFade = 1;
+      redraw = true;
+    }).catch(() => {});
+  }
+  // Called every frame: moves the clouds at most CL.fps times a second; nothing
+  // while a room is open or under reduced motion (the clouds then stand still).
+  function stepClouds(now) {
+    if (!cloudLayers.length || reduceMotion) return;
+    if (inRoom) { cloudLast = now; return; }
+    if (now - cloudLast < 1000 / CL.fps - 2) return;
+    const dt = Math.min(0.1, (now - cloudLast) / 1000);   // a hidden tab or a long frame never makes them jump
+    cloudLast = now;
+    if (cloudFade < 1) cloudFade = Math.min(1, cloudFade + dt / 0.6);
+    cloudLayers.forEach(({ L, u }) => {
+      u.offset.value = (u.offset.value + L.speed * dt) % (CL_CYCLE * L.slot);
+      u.opacity.value = L.opacity * cloudFade;
+    });
+    redraw = true;
+  }
 
   /* ---------- zones: outlines for hover and click ---------- */
   // straight edges are cut into short pieces, so the outline bends with the cylinder
@@ -708,13 +819,14 @@ const PLAZA = {
         view.yaw += dy * f; view.cy += dc * f; view.span += ds * f; clampView(view); dirty = true;
       }
     }
-    if (hostVideo && !hostVideo.paused && !('requestVideoFrameCallback' in hostVideo)) dirty = true;
-    if (!dirty) return;
-    dirty = false;
+    if (hostVideo && !hostVideo.paused && !('requestVideoFrameCallback' in hostVideo)) redraw = true;
+    stepClouds(now);
+    if (!dirty && (!redraw || now - lastDraw < 1000 / CL.fps - 2)) return;
+    lastDraw = now;
     applyCamera();
     renderer.render(scene, camera);
-    updateOverlay();
-    updateBar();
+    if (dirty) { updateOverlay(); updateBar(); }
+    dirty = redraw = false;
   }
 
   /* ---------- loading ---------- */
@@ -731,6 +843,7 @@ const PLAZA = {
     .then(() => {
       buildHost();
       buildPanorama(img);
+      buildClouds();
       resize();
       if (!reduceMotion) {   // opening turn −29° → 0° over 2.4 s (instruction §10)
         view.yaw = -0.5; clampView(view); Object.assign(target, view);

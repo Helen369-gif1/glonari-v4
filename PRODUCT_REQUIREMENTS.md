@@ -17,15 +17,15 @@ Glonari Global Scene is the Glonari first screen: the Glonari Plaza, a 210° pan
 
 ## 3. Current state of the project
 
-Static site, no build step. Entry points: `index.html` (desktop) and `mobile/index.html` (phones and narrow windows, §19), both showing the plaza (`plaza.js`, `plaza.css`, `assets/plaza-*.webp`, `assets/gia-fountain.*`, three.js from `digital-banker/atrium/vendor/`). Sub-sites in their own folders: `digital-banker/` (GIA, Atrium), `global-reserve/`, `global-dream/`, `meet-gia/` — each governed by its own project files.
+Static site, no build step. Entry points: `index.html` (desktop) and `mobile/index.html` (phones and narrow windows, §19), both showing the plaza (`plaza.js`, `plaza.css`, `assets/plaza-*.webp`, `assets/plaza-clouds.png`, `assets/gia-fountain.*`, three.js from `digital-banker/atrium/vendor/`). `tools/make-sky-mask.py` remakes the sky masks (`assets/plaza-sky-*.webp`) when the panorama changes. Sub-sites in their own folders: `digital-banker/` (GIA, Atrium), `global-reserve/`, `global-dream/`, `meet-gia/` — each governed by its own project files.
 
 ## 4. Existing technical structure
 
-Plain HTML/CSS and vanilla JavaScript; no framework, bundler or package manifest. `plaza.js` renders the 210° cylindrical panorama with three.js r128 (the atrium's local `vendor/three.min.js`), engraves the building names, plays Gia on the fountain and draws the 11 zones as an SVG overlay. The PLAZA config block in `plaza.js` holds the picture, geometry, zones and click targets.
+Plain HTML/CSS and vanilla JavaScript; no framework, bundler or package manifest. `plaza.js` renders the 210° cylindrical panorama with three.js r128 (the atrium's local `vendor/three.min.js`), engraves the building names, plays Gia on the fountain, moves clouds across the sky through a sky mask and draws the 11 zones as an SVG overlay. The PLAZA config block in `plaza.js` holds the picture, geometry, zones, clouds and click targets.
 
 ## 6. Main user experience
 
-The page opens on the plaza with a short opening turn. The visitor drags (or uses ‹ › on touch, arrows on the keyboard) to look around; a bar of nine building icons at the bottom marks the building nearest the screen centre, and clicking an icon turns the camera to that building and highlights it. Hovering or focusing a zone dims the rest and outlines it in gold and shows its label in the hint under the bar; a click or tap on the zone turns the camera to it and enters it.
+The page opens on the plaza with a short opening turn; translucent clouds drift slowly across the sky behind the buildings. The visitor drags (or uses ‹ › on touch, arrows on the keyboard) to look around; a bar of nine building icons at the bottom marks the building nearest the screen centre, and clicking an icon turns the camera to that building and highlights it. Hovering or focusing a zone dims the rest and outlines it in gold and shows its label in the hint under the bar; a click or tap on the zone turns the camera to it and enters it.
 
 ## 7. Functional requirements
 
@@ -57,12 +57,12 @@ Motion is smooth, soft and eased — never abrupt.
 
 ## 19. Mobile/touch considerations
 
-- Phones get the same plaza as desktop (§31), on `mobile/index.html`, with swipe, ‹ › buttons, the building bar and the half-size picture.
+- Phones get the same plaza as desktop (§31), on `mobile/index.html`, with swipe, ‹ › buttons, the building bar, the clouds and the half-size picture.
 - Device gates: the root page sends a window under 768 px wide or narrower than 3:2 to `mobile/` (on load and live on resize/rotation); `mobile/` sends it back only when the window is at least 768 px and 3:2 **and** has a mouse/trackpad (`(hover: hover) and (pointer: fine)`), so a phone in landscape stays on `mobile/`. See DEVELOPMENT_PLAN.md Stage 14.
 
 ## 21. Reduced-motion requirements
 
-Every animation respects `prefers-reduced-motion: reduce`. On the plaza: poster only, no video request, no cursor size transition, the cursor ring follows without lag, the building bar changes without transitions.
+Every animation respects `prefers-reduced-motion: reduce`. On the plaza: poster only, no video request, no cursor size transition, the cursor ring follows without lag, the building bar changes without transitions, the clouds stand still.
 
 ## 22. Technical constraints
 
@@ -71,7 +71,7 @@ Every animation respects `prefers-reduced-motion: reduce`. On the plaza: poster 
 
 ## 23. Confirmed requirements
 
-- First screen (desktop and mobile) is the Glonari Plaza 210° (§31): atrium technology, 9 buildings + Gia + the globe as zones, placeholder room screen for the buildings without a target, building bar with the "Drag / Swipe to see more" hint.
+- First screen (desktop and mobile) is the Glonari Plaza 210° (§31): atrium technology, 9 buildings + Gia + the globe as zones, placeholder room screen for the buildings without a target, building bar with the "Drag / Swipe to see more" hint, translucent clouds drifting across the sky behind the buildings.
 - Chain: Plaza → GIA → Atrium → Global Reserve or Global Dream; Gia → Meet Gia; explicit back links (§14).
 - All user-facing copy in English (§15).
 - Vanilla JavaScript, no build step (§22).
@@ -91,7 +91,7 @@ Source: DEVELOPMENT_PLAN.md Stage 21.
 - **Zones:** 9 buildings + Gia + the globe on the fountain (in code `PLAZA.fountain`, id `fountain`, label "Glonari"); the fountain bowl is not clickable. Building outlines are simple architectural shapes with rounded corners (radius 25 panorama px; 12 at the Digital Banker pediment apex); rooftop plants are outside, trees inside. Gia's outline follows her silhouette in the video's mask, the globe's is a circle; the two do not overlap. Hover = everything else dimmed 50% + the zone's outline highlighted: gold line #f1cf8c 2 px, fill rgba(255,214,150,.10), glow (drop-shadow 6 px and 22 px), `mix-blend-mode: screen`. Click ≤ 6 px.
 - **Click targets:** Digital Banker → `digital-banker/gia/index.html`; Gia → `meet-gia/index.html`; all other buildings and the globe → placeholder room screen with "Back to the plaza". No new links.
 - **Gia on the fountain:** `assets/gia-fountain.mp4` (double colour/alpha video) at the floor circle below the steps, placed by the user's template (centre x 3186, bottom 1825, height 672); loops all the time the visitor is on the page.
-- **Phones:** same plaza, swipe, ‹ › buttons, building bar, half-size picture.
+- **Phones:** same plaza, swipe, ‹ › buttons, building bar, clouds, half-size picture.
 - **Open:** manual check in real browsers and on real phones.
 
 ### Building bar
@@ -103,6 +103,16 @@ Source: DEVELOPMENT_PLAN.md Stage 21.
 - The bar appears with the plaza and is hidden while entering a zone and in a room.
 - On phones the ‹ › buttons stay (instruction §10); the bar and ‹ › do not overlap and drive the same camera.
 - Keyboard: the icons add no Tab stops; the zones stay reachable by Tab as before.
+
+### Clouds
+
+- Translucent clouds from `assets/plaza-clouds.png` drift from left to right across the sky in an endless seamless loop — drawn by code on the panorama, not a video.
+- Only where the panorama shows sky: always behind the buildings, trees and rooftop plants, including the gaps between them (sky mask `assets/plaza-sky-*.webp`, made by `tools/make-sky-mask.py`).
+- All six clouds of the PNG, in three layers at different heights over the whole sky above the roofs (high, middle, low), one cloud every 1050 panorama px in each layer: about 8 clouds on the opening view of a computer screen, about 3 on a phone. Opacity 0.35.
+- Motion visible but calm: a cloud crosses a 1600 px wide screen in about 1¾ minutes (34–38 panorama px per second, the lower layers slightly faster).
+- On the opening view the clouds stay above the roofs and the Digital Banker pediment; towards the sides of a computer screen the highest ones may be partly cut by the top edge.
+- Same on phones (half-size mask). The clouds do not affect hover, clicks, the building bar or the cursor.
+- They stand still while a room is open and under reduced motion. While only the clouds move, the plaza is redrawn at most 30 times a second.
 
 ### Custom cursor
 

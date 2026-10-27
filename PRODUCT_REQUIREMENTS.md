@@ -92,7 +92,7 @@ Source: DEVELOPMENT_PLAN.md Stage 21.
 - **Names:** engraved by code into the blank facade bands (Cinzel, atrium engraving).
 - **Zones:** 9 buildings + Gia + the globe on the fountain (in code `PLAZA.fountain`, id `fountain`, label "Glonari"); the fountain bowl is not clickable. Building outlines are simple architectural shapes with rounded corners (radius 25 panorama px; 12 at the Digital Banker pediment apex); rooftop plants are outside, trees inside. Gia's outline follows her silhouette in the video's mask, the globe's is a circle; the two do not overlap. Hover = everything else dimmed 50% + the zone's outline highlighted: gold line #f1cf8c 2 px, fill rgba(255,214,150,.10), glow (drop-shadow 6 px and 22 px), `mix-blend-mode: screen`. Click ≤ 6 px.
 - **Click targets:** Digital Banker → `digital-banker/gia/index.html`; Gia → `meet-gia/index.html`; all other buildings and the globe → placeholder room screen with "Back to the plaza". No new links.
-- **Gia on the fountain:** `assets/gia-fountain.mp4` (double colour/alpha video) at the floor circle below the steps, placed by the user's template (centre x 3186, bottom 1825, height 672); loops all the time the visitor is on the page.
+- **Gia on the fountain:** `assets/gia-fountain.mp4` (double colour/alpha video) at the floor circle below the steps, placed by the user's template (centre x 3186, bottom 1825, height 672); loops all the time the visitor is on the page. Her still poster is part of the plaza's first picture, so the fountain is never empty; the video replaces it once loaded (under the intro video — only after the intro, §32).
 - **Phones:** same plaza, swipe, ‹ › buttons, building bar, clouds, half-size picture.
 - **Opening:** after the intro video (§32) the plaza opens straight on its opening view, Digital Banker in the centre; without the intro it opens with a short turn (−29° → 0° over 2.4 s); under reduced motion — no turn.
 - **Open:** manual check in real browsers and on real phones.
@@ -115,6 +115,7 @@ Source: DEVELOPMENT_PLAN.md Stage 21.
 - Motion visible but calm: a cloud crosses a 1600 px wide screen in about 1¾ minutes (34–38 panorama px per second, the lower layers slightly faster).
 - On the opening view the clouds stay above the roofs and the Digital Banker pediment; towards the sides of a computer screen the highest ones may be partly cut by the top edge.
 - Same on phones (half-size mask). The clouds do not affect hover, clicks, the building bar or the cursor.
+- They appear gently (fade in over 2 s) once loaded — after the plaza is shown, and under the intro video only after the intro (§32).
 - They stand still while a room is open and under reduced motion. While only the clouds move, the plaza is redrawn at most 30 times a second.
 
 ### Custom cursor
@@ -129,8 +130,8 @@ Source: DEVELOPMENT_PLAN.md Stage 21.
 Source: DEVELOPMENT_PLAN.md Stage 22. Only the idea is taken from glonari.com; the video and the design are our own.
 
 - **When:** on the first visit in a browser tab, a 6.5 s silent video plays full screen over the plaza, once, not looped; its poster shows until it starts. Computers get the landscape video, phones the portrait one.
-- **Into the plaza:** the video's last frame is the plaza's opening view; when it ends, the video dissolves into the plaza in 1.1 s. The plaza starts loading once the video is playing, so the two do not compete for the connection; if it is not ready when the video ends, the last frame stays on screen until it is. The plaza is working by the time of the dissolve — Gia moving, clouds drifting, the building bar shown — and it opens straight on that view, without the opening turn.
-- **"ENTER THE PLAZA →":** visible from the first second, skips the rest of the video with the same dissolve. In the gold of the zone outlines, always on one line; on a computer at the bottom right, on a phone at the bottom centre below the fountain and Gia, above the safe area.
+- **Into the plaza:** the video's last frame is the plaza's opening view; when it ends, the video dissolves into the plaza in 1.1 s. The plaza starts loading once the video is playing, so the two do not compete for the connection; if it is not ready when the video ends, the last frame stays on screen until it is. During the dissolve the plaza shows Gia's still poster on the fountain and the building bar; Gia's video and the clouds are loaded only after the intro, so they never compete with it — Gia comes to life and the clouds fade in gently right after. The plaza opens straight on that view, without the opening turn.
+- **"ENTER THE PLAZA →":** visible from the first second, skips the rest of the video with the same dissolve. A press is shown at once — the button fades out and stops reacting; if the plaza is not ready yet, the video plays on until it is. In the gold of the zone outlines, always on one line; on a computer at the bottom right, on a phone at the bottom centre below the fountain and Gia, above the safe area.
 - **Once per tab:** after the video has ended or the button was pressed, the tab does not show it again — not on reload, not when moving between the computer and phone pages, not when coming back from a sub-site. A new tab shows it again.
 - **Reduced motion:** no intro; the video is not downloaded; the plaza opens at once.
 - **If the video cannot play** (autoplay blocked, load error, no start within 3 s): the intro is skipped at once and the plaza opens as usual.

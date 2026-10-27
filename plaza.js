@@ -846,13 +846,16 @@ const PLAZA = {
     new Promise((r) => setTimeout(r, 2500)),
   ]);
   const posterReady = new Promise((r) => new THREE.TextureLoader().load(url(HOST.poster), r, undefined, () => r(null)));
-  // Gia's video, the clouds and the sky mask are requested only once the intro
-  // video is over — dissolving or skipped (Stage 22) — so they never share the
-  // network with it; plaza-intro.js says so with 'plaza-intro-over'
-  const introOver = new Promise((r) => {
-    if (!document.documentElement.classList.contains('intro')) r();
-    else document.addEventListener('plaza-intro-over', r, { once: true });
+  // Under the intro video (Stage 22) the clouds and the sky mask are requested
+  // 2 s before its end, so they are on the sky by the dissolve, and Gia's video
+  // once it is over — dissolving or skipped — so neither shares the network
+  // with its start; plaza-intro.js marks both on <html> and fires them as events
+  const introStage = (name) => new Promise((r) => {
+    const html = document.documentElement;
+    if (!html.classList.contains('intro') || html.classList.contains(name)) r();
+    else document.addEventListener(name, r, { once: true });
   });
+  const introEnding = introStage('plaza-intro-ending'), introOver = introStage('plaza-intro-over');
   Promise.all([img.decode ? img.decode() : new Promise((r) => (img.onload = r)), fontsReady, posterReady])
     .then(([, , poster]) => {
       buildHost(poster);
@@ -866,7 +869,8 @@ const PLAZA = {
       }
       requestAnimationFrame(tick);
       document.body.classList.add('ready');
-      introOver.then(() => { startHostVideo(); buildClouds(); });
+      introEnding.then(buildClouds);
+      introOver.then(startHostVideo);
     })
     .catch(() => { $('status').textContent = 'The plaza image did not load. Check that the assets folder is in place, then reload.'; });
 })();

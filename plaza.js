@@ -856,14 +856,30 @@ const PLAZA = {
     else document.addEventListener(name, r, { once: true });
   });
   const introEnding = introStage('plaza-intro-ending'), introOver = introStage('plaza-intro-over');
+  // Under the intro the plaza opens on the video's last frame as this window
+  // shows it (Stage 22): the video covers the window, so on a window wider than
+  // the video the view is zoomed in by the same factor, on 0° and the centre
+  // (no closer than MIN_SPAN); kept in step with the window until the dissolve starts
+  const introVideo = document.querySelector('#intro video');
+  function fitIntro() {
+    const html = document.documentElement;
+    if (!html.classList.contains('intro') || html.classList.contains('plaza-intro-over')) return;
+    const videoAspect = introVideo && introVideo.videoWidth ? introVideo.videoWidth / introVideo.videoHeight : aspect;
+    Object.assign(view, clampView({ yaw: 0, cy: (TAN_TOP + TAN_BOT) / 2, span: MAX_SPAN * Math.min(1, videoAspect / aspect) }));
+    Object.assign(target, view); dirty = true;
+  }
   Promise.all([img.decode ? img.decode() : new Promise((r) => (img.onload = r)), fontsReady, posterReady])
     .then(([, , poster]) => {
       buildHost(poster);
       buildPanorama(img);
       resize();
       // opening turn −29° → 0° over 2.4 s (instruction §10); under the intro
-      // video the plaza opens straight on 0°, the intro's last frame (Stage 22)
-      if (!reduceMotion && !document.documentElement.classList.contains('intro')) {
+      // video the plaza opens straight on its last frame instead (fitIntro)
+      if (document.documentElement.classList.contains('intro')) {
+        fitIntro();
+        addEventListener('resize', fitIntro);
+        if (introVideo) introVideo.addEventListener('loadedmetadata', fitIntro);
+      } else if (!reduceMotion) {
         view.yaw = -0.5; clampView(view); Object.assign(target, view);
         animateTo(clampView({ yaw: 0, cy: view.cy, span: view.span }), 2400);
       }

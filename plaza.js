@@ -53,6 +53,7 @@ const PLAZA = {
     bottom: 1040,
     pieces: [[39,23,561,196],[903,39,1177,136],[1199,96,1659,290],[622,161,928,245],[26,243,311,324],[1105,293,1400,376]],
     fps: 30,           // frame cap while only the clouds move
+    fadeIn: 2,         // seconds the clouds take to appear once loaded
     // Opening view, 1600×900: the screen's top edge is y ≈ 0 in the centre, 121 at ±400 px,
     // 225 at ±600 px, 323 at the sides (the cylinder lifts the sky towards the edges); roofs from y ≈ 540.
     // The screen is ≈ 3830 panorama px wide there: 36 px/s crosses it in ≈ 1¾ min.
@@ -114,51 +115,6 @@ const PLAZA = {
 
   roomPlaceholder: 'This room is being prepared. Its content will appear here soon.',
 };
-
-/* ---------- intro video (DEVELOPMENT_PLAN.md Stage 22 / PRODUCT_REQUIREMENTS.md §32) ----------
-   The inline script in the page's <head> puts .intro on <html> only once per
-   tab and never under reduced motion. The plaza loads and starts underneath
-   (shut to the keyboard); the layer dissolves in 1.1 s when the video ends or
-   on "Enter the plaza" — only then is the tab marked as having seen it — and
-   is then removed. A video that does not start is skipped at once. */
-(() => {
-  'use strict';
-  const root = document.documentElement, intro = document.getElementById('intro');
-  if (!intro) return;
-  if (!root.classList.contains('intro')) { intro.remove(); return; }
-  const FADE = 1100, START_LIMIT = 3000;
-  const video = intro.querySelector('video'), enter = document.getElementById('intro-enter');
-  const dot = document.querySelector('.gg-dot');
-  const behind = [...document.body.children].filter((el) => el !== intro && el.tagName !== 'SCRIPT');
-  behind.forEach((el) => { el.inert = true; });
-  let done = false;
-  function remove() {
-    video.removeAttribute('src'); video.load();
-    intro.remove();
-    root.classList.remove('intro');
-    behind.forEach((el) => { el.inert = false; });
-  }
-  function finish(seen) {
-    if (done) return;
-    done = true; clearTimeout(startTimer);
-    if (dot) dot.classList.remove('is-hot');
-    if (!seen) { remove(); return; }
-    try { sessionStorage.setItem('plaza-intro-seen', '1'); } catch (e) {}
-    intro.classList.add('out');
-    setTimeout(remove, FADE);
-  }
-  const startTimer = setTimeout(() => finish(false), START_LIMIT);
-  video.addEventListener('playing', () => clearTimeout(startTimer), { once: true });
-  video.addEventListener('ended', () => finish(true));
-  video.addEventListener('error', () => finish(false));
-  enter.addEventListener('click', () => finish(true));
-  if (dot) {
-    enter.addEventListener('pointerenter', () => dot.classList.add('is-hot'));
-    enter.addEventListener('pointerleave', () => dot.classList.remove('is-hot'));
-  }
-  video.src = intro.dataset.video;
-  video.play().catch(() => finish(false));
-})();
 
 /* ====================================================================== */
 (() => {
@@ -357,7 +313,7 @@ const PLAZA = {
   }
 
   /* ---------- Gia on the fountain: flat panel facing the camera, looping video ---------- */
-  let hostVideo = null, hostMat = null;
+  let hostVideo = null, hostMat = null, hostMesh = null;
   const alphaShader = {
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
     // top half of the frame — colour (already multiplied by alpha), bottom half — the mask
@@ -366,7 +322,11 @@ const PLAZA = {
       ' float a = texture2D(map, vec2(vUv.x, vUv.y * 0.5)).r;' +
       ' if (a < 0.004) discard; gl_FragColor = vec4(c, a); }',
   };
-  function buildHost() {
+  // poster and video are filtered alike (no mipmaps), so the swap does not change sharpness
+  const flat = (tex) => { tex.minFilter = THREE.LinearFilter; tex.generateMipmaps = false; return tex; };
+  const showHost = (tex) => { hostMat.uniforms.map.value = tex; hostMesh.visible = true; dirty = true; };
+  // the panel with Gia's poster: part of the plaza's first picture, so the fountain is never empty
+  function buildHost(poster) {
     hostMat = new THREE.ShaderMaterial({
       uniforms: { map: { value: null } }, ...alphaShader,
       transparent: true, depthWrite: false,
@@ -378,12 +338,12 @@ const PLAZA = {
     mesh.renderOrder = 3;
     mesh.visible = false;
     scene.add(mesh);
-    // poster and video are filtered alike (no mipmaps), so the swap does not change sharpness
-    const flat = (tex) => { tex.minFilter = THREE.LinearFilter; tex.generateMipmaps = false; return tex; };
-    const show = (tex) => { hostMat.uniforms.map.value = tex; mesh.visible = true; dirty = true; };
-    new THREE.TextureLoader().load(url(HOST.poster), (t) => { if (!hostMat.uniforms.map.value) show(flat(t)); });
+    hostMesh = mesh;
+    if (poster) showHost(flat(poster));
+  }
+  // the looping video, requested only after the intro video (Stage 22)
+  function startHostVideo() {
     if (reduceMotion) return;   // "reduce motion": the still poster only
-
     const v = document.createElement('video');
     v.muted = true; v.defaultMuted = true; v.playsInline = true; v.loop = true;
     v.setAttribute('muted', ''); v.setAttribute('playsinline', ''); v.preload = 'auto';
@@ -394,7 +354,7 @@ const PLAZA = {
     const toVideo = () => {
       if (v.paused || v.readyState < v.HAVE_CURRENT_DATA) return;
       if (!vtex) vtex = flat(new THREE.VideoTexture(v));
-      if (hostMat.uniforms.map.value !== vtex) { vtex.needsUpdate = true; show(vtex); }
+      if (hostMat.uniforms.map.value !== vtex) { vtex.needsUpdate = true; showHost(vtex); }
     };
     if ('requestVideoFrameCallback' in v) {
       const onFrame = () => { toVideo(); redraw = true; v.requestVideoFrameCallback(onFrame); };
@@ -402,6 +362,7 @@ const PLAZA = {
     } else {
       v.addEventListener('timeupdate', toVideo);
     }
+    playHost();
   }
   // the loop runs all the time the visitor is on the page
   function playHost() {
@@ -487,7 +448,7 @@ const PLAZA = {
     if (now - cloudLast < 1000 / CL.fps - 2) return;
     const dt = Math.min(0.1, (now - cloudLast) / 1000);   // a hidden tab or a long frame never makes them jump
     cloudLast = now;
-    if (cloudFade < 1) cloudFade = Math.min(1, cloudFade + dt / 0.6);
+    if (cloudFade < 1) cloudFade = Math.min(1, cloudFade + dt / CL.fadeIn);
     cloudLayers.forEach(({ L, u }) => {
       u.offset.value = (u.offset.value + L.speed * dt) % (CL_CYCLE * L.slot);
       u.opacity.value = L.opacity * cloudFade;
@@ -884,11 +845,18 @@ const PLAZA = {
     document.fonts ? document.fonts.load('600 64px Cinzel') : Promise.resolve(),
     new Promise((r) => setTimeout(r, 2500)),
   ]);
-  Promise.all([img.decode ? img.decode() : new Promise((r) => (img.onload = r)), fontsReady])
-    .then(() => {
-      buildHost();
+  const posterReady = new Promise((r) => new THREE.TextureLoader().load(url(HOST.poster), r, undefined, () => r(null)));
+  // Gia's video, the clouds and the sky mask are requested only once the intro
+  // video is over — dissolving or skipped (Stage 22) — so they never share the
+  // network with it; plaza-intro.js says so with 'plaza-intro-over'
+  const introOver = new Promise((r) => {
+    if (!document.documentElement.classList.contains('intro')) r();
+    else document.addEventListener('plaza-intro-over', r, { once: true });
+  });
+  Promise.all([img.decode ? img.decode() : new Promise((r) => (img.onload = r)), fontsReady, posterReady])
+    .then(([, , poster]) => {
+      buildHost(poster);
       buildPanorama(img);
-      buildClouds();
       resize();
       // opening turn −29° → 0° over 2.4 s (instruction §10); under the intro
       // video the plaza opens straight on 0°, the intro's last frame (Stage 22)
@@ -898,7 +866,7 @@ const PLAZA = {
       }
       requestAnimationFrame(tick);
       document.body.classList.add('ready');
-      playHost();
+      introOver.then(() => { startHostVideo(); buildClouds(); });
     })
     .catch(() => { $('status').textContent = 'The plaza image did not load. Check that the assets folder is in place, then reload.'; });
 })();

@@ -17,7 +17,7 @@ Glonari Global Scene is the Glonari first screen: the Glonari Plaza, a 210° pan
 
 ## 3. Current state of the project
 
-Static site, no build step. Entry points: `index.html` (desktop) and `mobile/index.html` (phones and narrow windows, §19), both showing the plaza (`plaza.js`, `plaza.css`, `assets/plaza-*.webp`, `assets/plaza-clouds.png`, `assets/gia-fountain.*`, the intro video `assets/plaza-intro*` (§32), three.js from `digital-banker/atrium/vendor/`). `tools/make-sky-mask.py` remakes the sky masks (`assets/plaza-sky-*.webp`) when the panorama changes. Sub-sites in their own folders: `digital-banker/` (GIA, Atrium), `global-reserve/`, `global-dream/`, `meet-gia/` — each governed by its own project files.
+Static site, no build step. Entry points: `index.html` (desktop) and `mobile/index.html` (phones and narrow windows, §19), both showing the plaza (`plaza.js`, `plaza.css`, `plaza-intro.js`, `assets/plaza-*.webp`, `assets/plaza-clouds.png`, `assets/gia-fountain.*`, the intro video `assets/plaza-intro*` (§32), three.js from `digital-banker/atrium/vendor/`). `tools/make-sky-mask.py` remakes the sky masks (`assets/plaza-sky-*.webp`) when the panorama changes. Sub-sites in their own folders: `digital-banker/` (GIA, Atrium), `global-reserve/`, `global-dream/`, `meet-gia/` — each governed by its own project files.
 
 ## 4. Existing technical structure
 
@@ -129,7 +129,7 @@ Source: DEVELOPMENT_PLAN.md Stage 21.
 Source: DEVELOPMENT_PLAN.md Stage 22. Only the idea is taken from glonari.com; the video and the design are our own.
 
 - **When:** on the first visit in a browser tab, a 6.5 s silent video plays full screen over the plaza, once, not looped; its poster shows until it starts. Computers get the landscape video, phones the portrait one.
-- **Into the plaza:** the video's last frame is the plaza's opening view; when it ends, the video dissolves into the plaza in 1.1 s. The plaza is already working by then — Gia moving, clouds drifting, the building bar shown — and it opens straight on that view, without the opening turn.
+- **Into the plaza:** the video's last frame is the plaza's opening view; when it ends, the video dissolves into the plaza in 1.1 s. The plaza starts loading once the video is playing, so the two do not compete for the connection; if it is not ready when the video ends, the last frame stays on screen until it is. The plaza is working by the time of the dissolve — Gia moving, clouds drifting, the building bar shown — and it opens straight on that view, without the opening turn.
 - **"ENTER THE PLAZA →":** visible from the first second, skips the rest of the video with the same dissolve. In the gold of the zone outlines, always on one line; on a computer at the bottom right, on a phone at the bottom centre below the fountain and Gia, above the safe area.
 - **Once per tab:** after the video has ended or the button was pressed, the tab does not show it again — not on reload, not when moving between the computer and phone pages, not when coming back from a sub-site. A new tab shows it again.
 - **Reduced motion:** no intro; the video is not downloaded; the plaza opens at once.

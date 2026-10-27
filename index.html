@@ -46,11 +46,13 @@
 <script>
   // Intro video (DEVELOPMENT_PLAN.md Stage 22 / PRODUCT_REQUIREMENTS.md
   // §32): once per tab, never under reduced motion. Decided here, before the
-  // first paint, so a skipped intro never flashes; plaza.js plays it,
-  // dissolves it and removes it.
+  // first paint, so a skipped intro never flashes; plaza-intro.js plays it,
+  // dissolves it and removes it. The poster is requested from here, before
+  // the stylesheet, so it is on screen as early as possible.
   try {
     if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !sessionStorage.getItem('plaza-intro-seen')) {
       document.documentElement.classList.add('intro');
+      new Image().src = 'assets/plaza-intro-poster.webp';
     }
   } catch (e) {}
 </script>
@@ -60,12 +62,15 @@
 </head>
 <body>
   <!-- Intro video (Stage 22 / §32): over the whole scene, shown only under
-       html.intro. The poster is the layer's background (fetched only when
-       the layer is shown); plaza.js sets the video's src from data-video. -->
+       html.intro. The poster is the layer's background (requested by the
+       <head> script only when the layer is shown); plaza-intro.js, right
+       after the layer, sets the video's src from data-video and then loads
+       three.min.js and plaza.js (data-base = path to the repo root). -->
   <div id="intro" data-video="assets/plaza-intro.mp4" style="background-image: url('assets/plaza-intro-poster.webp')">
     <video muted autoplay playsinline preload="auto" aria-hidden="true"></video>
     <button id="intro-enter" type="button">Enter the plaza <span aria-hidden="true">→</span></button>
   </div>
+  <script src="plaza-intro.js" data-base=""></script>
   <!-- Glonari Plaza 210° (2026-10-24, DEVELOPMENT_PLAN.md Stage 21 /
        PRODUCT_REQUIREMENTS.md §31): the atrium technology — plaza.js draws the
        panorama, the engraved names, Gia on the fountain and the 11 zones. -->
@@ -94,8 +99,5 @@
        the dot must come before the ring (.is-hot ~ .gg-ring). -->
   <div class="gg-dot" aria-hidden="true"></div>
   <div class="gg-ring" aria-hidden="true"></div>
-
-  <script src="digital-banker/atrium/vendor/three.min.js"></script>
-  <script src="plaza.js" data-base=""></script>
 </body>
 </html>

@@ -41,6 +41,7 @@
     try {
       if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !sessionStorage.getItem('plaza-intro-seen')) {
         document.documentElement.classList.add('intro');
+        new Image().src = '../assets/plaza-intro-mobile-poster.webp';
       }
     } catch (e) {}
   </script>
@@ -55,6 +56,7 @@
     <video muted autoplay playsinline preload="auto" aria-hidden="true"></video>
     <button id="intro-enter" type="button">Enter the plaza <span aria-hidden="true">→</span></button>
   </div>
+  <script src="../plaza-intro.js" data-base="../"></script>
   <!-- Glonari Plaza 210° (2026-10-24, DEVELOPMENT_PLAN.md Stage 21 /
        PRODUCT_REQUIREMENTS.md §31): the atrium technology — plaza.js draws the
        panorama, the engraved names, Gia on the fountain and the 11 zones. -->
@@ -82,8 +84,5 @@
        under (hover: hover) and (pointer: fine), so phones never get it. -->
   <div class="gg-dot" aria-hidden="true"></div>
   <div class="gg-ring" aria-hidden="true"></div>
-
-  <script src="../digital-banker/atrium/vendor/three.min.js"></script>
-  <script src="../plaza.js" data-base="../"></script>
 </body>
 </html>
